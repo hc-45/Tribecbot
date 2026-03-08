@@ -94,6 +94,7 @@ public interface Settings {
     }
 
     public interface Intake {
+        double PIVOT_ARM_LENGTH_METERS = 0.3225038;
         Rotation2d PIVOT_STOW_ANGLE = Rotation2d.fromDegrees(90.0); 
         Rotation2d PIVOT_DEPLOY_ANGLE = Rotation2d.fromDegrees(0.0);
 

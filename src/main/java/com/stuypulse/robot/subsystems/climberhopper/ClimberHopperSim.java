@@ -14,6 +14,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import java.util.Optional;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 
 public class ClimberHopperSim extends ClimberHopper {
     
@@ -22,6 +26,8 @@ public class ClimberHopperSim extends ClimberHopper {
     private double voltage;
 
     private Optional<Double> voltageOverride;
+
+    private final StructPublisher<Pose3d> hopperPublisher = NetworkTableInstance.getDefault().getStructTopic("AdvScope/HopperPose", Pose3d.struct).publish();
 
     public ClimberHopperSim() {
         visualizer = ClimberHopperVisualizer.getInstance();
@@ -101,5 +107,7 @@ public class ClimberHopperSim extends ClimberHopper {
         visualizer.update(getCurrentHeight());
 
         sim.update(0.02);
+
+        hopperPublisher.set(new Pose3d(0, getCurrentHeight(), 0, new Rotation3d(0, 0, 0)));
     }
 }

@@ -26,9 +26,15 @@ import edu.wpi.first.wpilibj.simulation.LinearSystemSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
+
 import java.util.Optional;
 
 public class TurretSim extends Turret {
+
+    private final StructPublisher<Rotation3d> turretPublisher = NetworkTableInstance.getDefault().getStructTopic("AdvScope/TurretAngle", Rotation3d.struct).publish();
 
     private LinearSystemSim<N2, N1, N2> sim;
     private final LinearSystemLoop<N2, N1, N2> controller;
@@ -127,6 +133,8 @@ public class TurretSim extends Turret {
         }
 
         sim.update(Settings.DT);
+
+        turretPublisher.set(new Rotation3d(getAngle()));
     }
 
     /* USELESS, DON'T DELETE */

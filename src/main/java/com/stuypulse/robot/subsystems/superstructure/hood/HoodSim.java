@@ -12,8 +12,11 @@ import com.stuypulse.robot.util.superstructure.VisualizerHood;
 
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -26,6 +29,9 @@ public class HoodSim extends Hood {
     private final ElevatorSim sim;
 
     private Optional<Double> voltageOverride;
+
+    // private final StructPublisher<Rotation2d> hoodPublisher = NetworkTableInstance.getDefault().get
+    private final StructPublisher<Rotation3d> hoodPublisher = NetworkTableInstance.getDefault().getStructTopic("AdvScope/HoodAngle", Rotation3d.struct).publish();
 
     // Arc length constants — tune to match your hood geometry
     private static final double HOOD_ARM_LENGTH_METERS = 0.3;
@@ -112,6 +118,8 @@ public class HoodSim extends Hood {
         sim.update(Settings.DT);
 
         VisualizerHood.getInstance().update(getAngle(), atTolerance());
+        
+        hoodPublisher.set(new Rotation3d(getAngle()));
 
         if (Settings.DEBUG_MODE) {
             SmartDashboard.putNumber("Superstructure/Hood/Sim Height (m)", sim.getPositionMeters());
