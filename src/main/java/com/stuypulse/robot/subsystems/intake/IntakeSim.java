@@ -7,13 +7,16 @@ package com.stuypulse.robot.subsystems.intake;
 
 import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
 import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.subsystems.superstructure.shooter.ShooterSim;
 import com.stuypulse.robot.util.SysId;
 
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.LinearQuadraticRegulator;
 import edu.wpi.first.math.estimator.KalmanFilter;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.LinearSystem;
@@ -21,18 +24,28 @@ import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.simulation.LinearSystemSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-
+import static edu.wpi.first.units.Units.Meters;
 import java.util.Optional;
 
-public class IntakeSim extends Intake {
 
+import org.ironmaple.simulation.IntakeSimulation;
+import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
+
+public class IntakeSim extends Intake {
     private static final double ARM_LENGTH_METERS = 0.4;
     private static final double ARM_MASS_KG = 2.0;
     private static final double MOI = SingleJointedArmSim.estimateMOI(ARM_LENGTH_METERS, ARM_MASS_KG);
+
+    private final StructPublisher<Pose3d> pivotPublisher = NetworkTableInstance.getDefault()
+        .getStructTopic("AdvScope/IntakePose", Pose3d.struct).publish();
+    private final StructPublisher<Pose3d> hopperPublisher = NetworkTableInstance.getDefault()
+        .getStructTopic("AdvScope/HopperPose", Pose3d.struct).publish();
 
     private final SingleJointedArmSim pivotSim;
     private final LinearSystemLoop<N2, N1, N2> pivotController;
@@ -43,6 +56,8 @@ public class IntakeSim extends Intake {
     private final LinearSystemLoop<N1, N1, N1> rollerFollowerController;
 
     private Optional<Double> pivotVoltageOverride;
+
+    private final IntakeSimulation intakeSimulation;
 
     public IntakeSim() {
         LinearSystem<N2, N1, N2> pivotSystem = LinearSystemId.createSingleJointedArmSystem(
@@ -114,8 +129,18 @@ public class IntakeSim extends Intake {
         rollerFollowerController = new LinearSystemLoop<>(rollerSystem, rollerLQR, rollerFollowerKalman, 12.0, Settings.DT);
 
         pivotVoltageOverride = Optional.empty();
-    }
+        
+        // Here, create the intake simulation with respect to the intake on your real robot
+        this.intakeSimulation = IntakeSimulation.OverTheBumperIntake(
+            "Fuel", 
+            SwerveDrive, //change to swervesim?
+            Meters.of(1.234),  //width
+            Meters.of(2.345), //extension length
+            IntakeSimulation.IntakeSide.FRONT, 
+            67); 
+        //TODO: CHANGE PARAMS (idk what they are)
 
+    }
     @Override
     public Rotation2d getPivotAngle() {
         return Rotation2d.fromRadians(pivotSim.getAngleRads());
@@ -184,6 +209,29 @@ public class IntakeSim extends Intake {
         pivotSim.update(Settings.DT);
         rollerLeaderSim.update(Settings.DT);
         rollerFollowerSim.update(Settings.DT);
+        
+        pivotPublisher.set(
+            new Pose3d(
+                0.0,
+                0.0,
+                0.0,
+                new Rotation3d(
+                    getPivotAngle().getRadians(),
+                    0,
+                    Math.toRadians(0)
+                )
+            )
+        );
+        hopperPublisher.set(
+            new Pose3d(
+                ARM_LENGTH_METERS * Math.cos(
+                    getPivotAngle().getRadians()
+                ),
+                0,
+                0.275,
+                new Rotation3d(Math.toRadians(90), 0, Math.toRadians(90))
+            )
+        );
 
         if (Settings.DEBUG_MODE) {
             SmartDashboard.putNumber("Intake/Sim Pivot Angle (deg)", getPivotAngle().getDegrees());
@@ -191,6 +239,7 @@ public class IntakeSim extends Intake {
             SmartDashboard.putNumber("Intake/Sim Roller Leader Velocity (RPM)", rollerLeaderSim.getOutput(0) * 60.0 / (2.0 * Math.PI));
             SmartDashboard.putNumber("Intake/Sim Roller Follower Velocity (RPM)", rollerFollowerSim.getOutput(0) * 60.0 / (2.0 * Math.PI));
         }
+        
     }
 
     @Override
@@ -210,5 +259,24 @@ public class IntakeSim extends Intake {
             () -> pivotVoltageOverride.orElse(0.0),
             getInstance()
         );
+    }
+
+    public void setRunning(boolean runIntake) {
+        if (runIntake)
+            intakeSimulation.startIntake(); // Extends the intake out from the chassis frame and starts detecting contacts with game pieces
+        else
+            intakeSimulation.stopIntake(); // Retracts the intake into the chassis frame, disabling game piece collection
+    }
+
+    
+    public boolean isFuelInsideIntake() {
+        return intakeSimulation.getGamePiecesAmount() != 0; // True if there is a game piece in the intake
+    }
+
+    
+    public void launchFuel() {
+        // if there is a note in the intake, it will be removed and return true; otherwise, returns false
+        if (intakeSimulation.obtainGamePieceFromIntake())
+            ShooterSim.launchFuel(); // notify the simulated flywheels to launch a note
     }
 }

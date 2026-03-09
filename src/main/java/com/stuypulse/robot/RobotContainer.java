@@ -5,6 +5,8 @@
 /***************************************************************/
 package com.stuypulse.robot;
 
+import org.ironmaple.simulation.SimulatedArena;
+
 import com.stuypulse.robot.commands.auton.DoNothingAuton;
 import com.stuypulse.robot.commands.auton.poaching.BottomOneCyclePoach;
 import com.stuypulse.robot.commands.auton.poaching.BottomTwoCyclePoach;
@@ -66,6 +68,9 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
+import com.stuypulse.robot.subsystems.swerve.SwerveDrive;
+import com.stuypulse.robot.subsystems.swerve.SwerveDriveSim;
+
 
 public class RobotContainer {
     public interface EnabledSubsystems {
@@ -109,14 +114,14 @@ public class RobotContainer {
         configureButtonBindings();
         configureAutons();
         configureSysids();
-
+            
         SmartDashboard.putData("Field", Field.FIELD2D);
         SmartDashboard.putData("Robot/Zero Pivot Encoder at Lower Limit (Deployed)", new ZeroPivotDeployed().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Pivot Encoder at Upper Limit (Stowed)", new ZeroPivotStowed().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Turret Encoders", new ZeroTurret().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Hood Encoder", new ZeroHoodEncoderAtUpperHardstop().ignoringDisable(true));
     }
-
+    
     /****************/
     /*** DEFAULTS ***/
     /****************/
@@ -353,4 +358,15 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         return autonChooser.getSelected();
     }
+
+
+    // This is simple approach step 2
+    private final SwerveDrive drive;
+    if (!Robot.isReal()) {
+        this.drive = new SwerveDriveSim(); // Simulation implementation
+    }
+    else {
+        this.drive = new SwerveDriveSim().getInstance(); // Real implementation
+    }
+    //shenzhen-robotics-alliance.github.io/maple-sim/swerve-sim-easy/
 }

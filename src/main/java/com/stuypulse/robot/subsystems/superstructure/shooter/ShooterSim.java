@@ -7,12 +7,14 @@ package com.stuypulse.robot.subsystems.superstructure.shooter;
 
 import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
 import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.subsystems.superstructure.turret.TurretSim;
 import com.stuypulse.robot.util.SysId;
 
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.LinearQuadraticRegulator;
 import edu.wpi.first.math.estimator.KalmanFilter;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
@@ -23,6 +25,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import java.util.Optional;
+
+import org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnFly;
 
 public class ShooterSim extends Shooter {
 
@@ -53,6 +57,9 @@ public class ShooterSim extends Shooter {
         controller = new LinearSystemLoop<>(flywheel, lqr, kalmanFilter, 12.0, Settings.DT);
 
         voltageOverride = Optional.empty();
+
+
+        
     }
 
     @Override
@@ -99,5 +106,26 @@ public class ShooterSim extends Shooter {
                 () -> 0.0,
                 () -> sim.getInput(0),
                 getInstance());
+    }
+    
+    public static void launchFuel(){
+        RebuiltFuelOnFly fuelOnFly = new RebuiltFuelOnFly(
+        // Specify the position of the chassis when the note is launched
+        SwerveDriveSim.getPose(),
+        // Specify the translation of the shooter from the robot center (in the shooter’s reference frame)
+        new Translation2d(0.2, 0),
+        // Specify the field-relative speed of the chassis, adding it to the initial velocity of the projectile
+        chassisSpeedsFieldRelative,
+        // The shooter facing direction is the same as the robot’s facing direction
+        SwerveDriveSim.getInstance().getHeading()
+                // Add the shooter’s rotation
+                + TurretSim.getInstance().getAngle(),
+        // Initial height of the flying note
+        0.45,
+        // The launch speed is proportional to the RPM; assumed to be 16 meters/second at 6000 RPM
+        getVelocity() / 6000 * 20,
+        // The angle at which the note is launched
+        Math.toRadians(55)
+        );
     }
 }
