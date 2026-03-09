@@ -3,7 +3,7 @@
 ### Mechanisms
 
 - Swerve
-- L1 Climb + ~~Vertically Expanding Hopper~~
+- ~~L1 Climb + Vertically Expanding Hopper~~
 - Handoff -> Turret + Hooded Shooter
 - Spindexer
 - Intake + Passive Horizontally Expanding Hopper

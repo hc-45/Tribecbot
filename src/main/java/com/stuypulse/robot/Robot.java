@@ -72,7 +72,7 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void simulationPeriod() {
+    public void simulationPeriodic() {
         SimulatedArena.getInstance().simulationPeriodic();
     }
 

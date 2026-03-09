@@ -1,194 +1,196 @@
+/************************ PROJECT TRIBECBOT *************************/
+/* Copyright (c) 2026 StuyPulse Robotics. All rights reserved. */
+/* Use of this source code is governed by an MIT-style license */
+/* that can be found in the repository LICENSE file.           */
+/***************************************************************/
 package com.stuypulse.robot.subsystems.intake;
 
-import java.util.Optional;
-
 import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
-import com.stuypulse.robot.constants.Gains;
 import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.util.SysId;
-import com.stuypulse.stuylib.streams.booleans.BStream;
-import com.stuypulse.stuylib.streams.booleans.filters.BDebounce;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.LinearQuadraticRegulator;
+import edu.wpi.first.math.estimator.KalmanFilter;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.math.system.LinearSystem;
+import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.wpilibj.simulation.FlywheelSim;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.simulation.LinearSystemSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
+import java.util.Optional;
 
 public class IntakeSim extends Intake {
-    private final FlywheelSim intakeRollerMotor;
 
-    private final SingleJointedArmSim pivot;
-    private final PIDController pivotController;
-    private final TrapezoidProfile pivotProfile;
-    private double pivotZeroOffsetRads;
+    private static final double ARM_LENGTH_METERS = 0.4;
+    private static final double ARM_MASS_KG = 2.0;
+    private static final double MOI = SingleJointedArmSim.estimateMOI(ARM_LENGTH_METERS, ARM_MASS_KG);
+
+    private final SingleJointedArmSim pivotSim;
+    private final LinearSystemLoop<N2, N1, N2> pivotController;
+
+    private final LinearSystemSim<N1, N1, N1> rollerLeaderSim;
+    private final LinearSystemSim<N1, N1, N1> rollerFollowerSim;
+    private final LinearSystemLoop<N1, N1, N1> rollerLeaderController;
+    private final LinearSystemLoop<N1, N1, N1> rollerFollowerController;
+
     private Optional<Double> pivotVoltageOverride;
-    private BStream pivotStalling;
-    private double pivotVoltage;
 
-    private final StructPublisher<Pose3d> pivotPublisher = NetworkTableInstance.getDefault()
-        .getStructTopic("AdvScope/IntakePose", Pose3d.struct).publish();
-    private final StructPublisher<Pose3d> hopperPublisher = NetworkTableInstance.getDefault()
-        .getStructTopic("AdvScope/HopperPose", Pose3d.struct).publish();
-    
     public IntakeSim() {
-        pivotZeroOffsetRads = 0.0;
-
-        intakeRollerMotor = new FlywheelSim(
-            LinearSystemId.createFlywheelSystem(
-                DCMotor.getKrakenX60(2),
-                0.1,
-                Settings.Intake.GEAR_RATIO
-            ),
-            DCMotor.getKrakenX60(2)
+        LinearSystem<N2, N1, N2> pivotSystem = LinearSystemId.createSingleJointedArmSystem(
+            DCMotor.getKrakenX60(1),
+            MOI,
+            Settings.Intake.GEAR_RATIO
         );
 
-        pivotController = new PIDController(
-            Gains.Intake.Pivot.kP,
-            Gains.Intake.Pivot.kI,
-            Gains.Intake.Pivot.kD
+        KalmanFilter<N2, N1, N2> kalmanFilter = new KalmanFilter<>(
+            Nat.N2(),
+            Nat.N2(),
+            pivotSystem,
+            VecBuilder.fill(3.0, 3.0),
+            VecBuilder.fill(0.01, 0.01),
+            Settings.DT
         );
 
-        pivotProfile = new TrapezoidProfile(
-            new TrapezoidProfile.Constraints(
-                Settings.Intake.PIVOT_MAX_VEL_STOW.getRadians(),
-                Settings.Intake.PIVOT_MAX_ACCEL_STOW.getRadians()
-            )
+        LinearQuadraticRegulator<N2, N1, N2> lqr = new LinearQuadraticRegulator<>(
+            pivotSystem,
+            VecBuilder.fill(0.00001, 100),
+            VecBuilder.fill(12),
+            Settings.DT
         );
 
-        pivot = new SingleJointedArmSim(
-            LinearSystemId.createDCMotorSystem(
-                DCMotor.getKrakenX60(1),
-                0.1,
-                Settings.Intake.GEAR_RATIO
-            ),
+        pivotController = new LinearSystemLoop<>(pivotSystem, lqr, kalmanFilter, 12.0, Settings.DT);
+
+        pivotSim = new SingleJointedArmSim(
             DCMotor.getKrakenX60(1),
             Settings.Intake.GEAR_RATIO,
-            Settings.Intake.PIVOT_ARM_LENGTH_METERS,
+            MOI,
+            ARM_LENGTH_METERS,
             Settings.Intake.PIVOT_MIN_ANGLE.getRadians(),
             Settings.Intake.PIVOT_MAX_ANGLE.getRadians(),
             true,
-            Settings.Intake.PIVOT_STOW_ANGLE.getRadians());
+            Settings.Intake.PIVOT_MAX_ANGLE.getRadians() // start stowed
+        );
+
+        LinearSystem<N1, N1, N1> rollerSystem = LinearSystemId.createFlywheelSystem(
+            DCMotor.getKrakenX60(1), 0.01, 1.0
+        );
+
+        rollerLeaderSim = new LinearSystemSim<>(rollerSystem);
+        rollerFollowerSim = new LinearSystemSim<>(rollerSystem);
+
+        LinearQuadraticRegulator<N1, N1, N1> rollerLQR = new LinearQuadraticRegulator<>(
+            rollerSystem,
+            VecBuilder.fill(8.0),
+            VecBuilder.fill(12.0),
+            Settings.DT
+        );
+
+        KalmanFilter<N1, N1, N1> rollerLeaderKalman = new KalmanFilter<>(
+            Nat.N1(), Nat.N1(),
+            rollerSystem,
+            VecBuilder.fill(3.0),
+            VecBuilder.fill(0.01),
+            Settings.DT
+        );
+
+        KalmanFilter<N1, N1, N1> rollerFollowerKalman = new KalmanFilter<>(
+            Nat.N1(), Nat.N1(),
+            rollerSystem,
+            VecBuilder.fill(3.0),
+            VecBuilder.fill(0.01),
+            Settings.DT
+        );
+
+        rollerLeaderController   = new LinearSystemLoop<>(rollerSystem, rollerLQR, rollerLeaderKalman,   12.0, Settings.DT);
+        rollerFollowerController = new LinearSystemLoop<>(rollerSystem, rollerLQR, rollerFollowerKalman, 12.0, Settings.DT);
 
         pivotVoltageOverride = Optional.empty();
-        
-        pivotStalling = BStream.create(
-                () -> Math.abs(pivot.getCurrentDrawAmps()) > Settings.Intake.STALL_CURRENT_LIMIT)
-                .filtered(new BDebounce.Both(Settings.Intake.STALL_DEBOUNCE));
-
-        pivotVoltage = 0.0;
     }
 
     @Override
     public Rotation2d getPivotAngle() {
-        return new Rotation2d(pivot.getAngleRads() - pivotZeroOffsetRads);
-    }
-
-    
-    @Override
-    public void zeroPivotStowed() {
-        pivotZeroOffsetRads = pivot.getAngleRads() - Settings.Intake.PIVOT_STOW_ANGLE.getRadians();
-    }
-
-    @Override
-    public void zeroPivotDeployed() {
-        pivotZeroOffsetRads = pivot.getAngleRads() - Settings.Intake.PIVOT_DEPLOY_ANGLE.getRadians();
-    }
-
-    @Override
-    public boolean pivotStalling() {
-        return pivotStalling.get();
+        return Rotation2d.fromRadians(pivotSim.getAngleRads());
     }
 
     @Override
     public boolean pivotAtTolerance() {
-        return Math.abs(
-            (getPivotAngle().getRotations()) - getPivotState().getTargetAngle().getRotations()) 
-                < Settings.Intake.PIVOT_ANGLE_TOLERANCE.getRotations();
+        double error = getPivotAngle().minus(getPivotState().getTargetAngle()).getRotations();
+        return Math.abs(error) < Settings.Intake.PIVOT_ANGLE_TOLERANCE.getRotations();
     }
 
-    public double getPivotVoltage() {
-        return this.pivotVoltage;
+    @Override
+    public boolean pivotStalling() {
+        return false;
     }
+
+    @Override
+    public void zeroPivotStowed() {
+        pivotSim.setState(Settings.Intake.PIVOT_MAX_ANGLE.getRadians(), 0.0);
+    }
+
+    @Override
+    public void zeroPivotDeployed() {
+        pivotSim.setState(Settings.Intake.PIVOT_MIN_ANGLE.getRadians(), 0.0);
+    }
+
     @Override
     public void periodic() {
         super.periodic();
-        PivotState pivotState = getPivotState();
-        pivotVoltage = pivotController.calculate(pivot.getAngleRads(), getPivotState().getTargetAngle().getRadians());
 
-        double rollerVoltage = getRollerState().getTargetDutyCycle() * Settings.Intake.CURRENT_LIMIT;
+        PivotState pivotState = getPivotState();
+
+        double targetRadPerSec = getRollerState().getTargetDutyCycle() * 2.0 * Math.PI / 60.0 * 6000.0;
+
+        rollerLeaderController.setNextR(VecBuilder.fill(targetRadPerSec));
+        rollerLeaderController.correct(VecBuilder.fill(rollerLeaderSim.getOutput(0)));
+        rollerLeaderController.predict(Settings.DT);
+
+        rollerFollowerController.setNextR(VecBuilder.fill(targetRadPerSec));
+        rollerFollowerController.correct(VecBuilder.fill(rollerFollowerSim.getOutput(0)));
+        rollerFollowerController.predict(Settings.DT);
 
         if (EnabledSubsystems.INTAKE.get()) {
             if (pivotVoltageOverride.isPresent()) {
-                pivot.setInputVoltage(pivotVoltageOverride.get());
+                pivotSim.setInputVoltage(pivotVoltageOverride.get());
             } else {
-                // PIVOT
-                if (pivotState == PivotState.DEPLOY
-                        && getPivotAngle().getDegrees() <= Settings.Intake.ARBITRARY_VOLTAGE_THRESHOLD.getDegrees()) {
-                    pivot.setInputVoltage(-Settings.Intake.PUSHDOWN_VOLTAGE); // applying 3 volts
-                } else if (pivotState == PivotState.DIGESTION_DOWN || pivotState == PivotState.DIGESTION_UP) {
-                    TrapezoidProfile.State profileState = pivotProfile.calculate(
-                        Settings.DT,
-                        new TrapezoidProfile.State(getPivotAngle().getRadians(), pivot.getVelocityRadPerSec()),
-                        new TrapezoidProfile.State(pivotState.getTargetAngle().getRadians(), 0)
-                    );
-                    pivot.setInputVoltage(pivotController.calculate(pivot.getAngleRads(), profileState.position)); // TODO: verify motion profile works
-                } else {
-                    pivot.setInputVoltage(pivotVoltage);
-                }
+                pivotController.setNextR(VecBuilder.fill(pivotState.getTargetAngle().getRadians(), 0.0));
+                pivotController.correct(VecBuilder.fill(pivotSim.getAngleRads(), pivotSim.getVelocityRadPerSec()));
+                pivotController.predict(Settings.DT);
+                pivotSim.setInputVoltage(pivotController.getU(0));
+            }
 
-                // ROLLERS
-                if (pivotState == PivotState.DEPLOY
-                        && getPivotAngle().getDegrees() <= Settings.Intake.THRESHOLD_TO_START_ROLLERS.getDegrees()) {
-                    intakeRollerMotor.setInputVoltage(rollerVoltage);
-                } else {
-                    intakeRollerMotor.setAngularVelocity(0);
-                }
+            if (pivotState == PivotState.DEPLOY && getPivotAngle().getDegrees() <= Settings.Intake.THRESHOLD_TO_START_ROLLERS.getDegrees()) {
+                rollerLeaderSim.setInput(rollerLeaderController.getU(0));
+                rollerFollowerSim.setInput(rollerFollowerController.getU(0));
+            } else {
+                rollerLeaderSim.setInput(0.0);
+                rollerFollowerSim.setInput(0.0);
             }
         } else {
-            // stop motors
-            pivot.setState(getPivotAngle().getRadians(), 0);
-            intakeRollerMotor.setAngularVelocity(0);
+            pivotSim.setInputVoltage(0.0);
+            rollerLeaderSim.setInput(0.0);
+            rollerFollowerSim.setInput(0.0);
         }
 
-        pivot.update(Settings.DT);
-        intakeRollerMotor.update(Settings.DT);
+        pivotSim.update(Settings.DT);
+        rollerLeaderSim.update(Settings.DT);
+        rollerFollowerSim.update(Settings.DT);
 
-        pivotPublisher.set(
-            new Pose3d(
-                0,
-                0,
-                0,
-                new Rotation3d(
-                    0.0,
-                    0.0,
-                    0.0
-                )
-            )
-        );
-
-        hopperPublisher.set(
-            new Pose3d(
-                0,
-                0,
-                0,
-                new Rotation3d(Math.toRadians(0), 0, Math.toRadians(0))
-            )
-        );
-
-        SmartDashboard.putNumber("Intake/rollerVoltage", rollerVoltage);
-        SmartDashboard.putNumber("Intake/pivotVoltage", pivotVoltage);
-        SmartDashboard.putNumber("Intake/pivotAngle", Math.toDegrees(pivot.getAngleRads()));
-        SmartDashboard.putNumber("Intake/pivotTarget", getPivotState().getTargetAngle().getDegrees());
+        if (Settings.DEBUG_MODE) {
+            SmartDashboard.putNumber("Intake/Sim Pivot Angle (deg)", getPivotAngle().getDegrees());
+            SmartDashboard.putNumber("Intake/Sim Pivot Velocity (deg per s)", Units.radiansToDegrees(pivotSim.getVelocityRadPerSec()));
+            SmartDashboard.putNumber("Intake/Sim Roller Leader Velocity (RPM)", rollerLeaderSim.getOutput(0) * 60.0 / (2.0 * Math.PI));
+            SmartDashboard.putNumber("Intake/Sim Roller Follower Velocity (RPM)", rollerFollowerSim.getOutput(0) * 60.0 / (2.0 * Math.PI));
+        }
     }
 
     @Override
@@ -199,13 +201,14 @@ public class IntakeSim extends Intake {
     @Override
     public SysIdRoutine getPivotSysIdRoutine() {
         return SysId.getRoutine(
-                2.0,
-                6.0,
-                "Intake Pivot",
-                voltage -> setPivotVoltageOverride(Optional.of(voltage)),
-                () -> getPivotAngle().getRotations(),
-                () -> pivot.getVelocityRadPerSec(),
-                () -> getPivotVoltage(),
-                getInstance());
+            2,
+            6,
+            "Intake Pivot",
+            voltage -> setPivotVoltageOverride(Optional.of(voltage)),
+            () -> getPivotAngle().getRotations(),
+            () -> pivotSim.getVelocityRadPerSec(),
+            () -> pivotVoltageOverride.orElse(0.0),
+            getInstance()
+        );
     }
 }
