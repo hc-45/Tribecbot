@@ -14,9 +14,6 @@ import com.stuypulse.robot.commands.auton.regular.BottomTwoCycle;
 import com.stuypulse.robot.commands.auton.regular.DepotAuton;
 import com.stuypulse.robot.commands.auton.regular.EightFuel;
 import com.stuypulse.robot.commands.auton.regular.TopTwoCycle;
-import com.stuypulse.robot.commands.climberhopper.ClimberOverrideDown;
-import com.stuypulse.robot.commands.climberhopper.ClimberOverrideStop;
-import com.stuypulse.robot.commands.climberhopper.ClimberOverrideUp;
 import com.stuypulse.robot.commands.handoff.HandoffConditionalCommand;
 import com.stuypulse.robot.commands.handoff.HandoffRun;
 import com.stuypulse.robot.commands.handoff.HandoffStop;
@@ -90,7 +87,6 @@ public class RobotContainer {
     public final Gamepad driver = new AutoGamepad(Ports.Gamepad.DRIVER);
 
     // Subsystem
-    // private final ClimberHopper climberHopper = ClimberHopper.getInstance();
     private final Handoff handoff = Handoff.getInstance();
     private final Intake intake = Intake.getInstance();
     private final Spindexer spindexer = Spindexer.getInstance();
@@ -119,10 +115,6 @@ public class RobotContainer {
         SmartDashboard.putData("Robot/Zero Pivot Encoder at Upper Limit (Stowed)", new ZeroPivotStowed().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Turret Encoders", new ZeroTurret().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Hood Encoder", new ZeroHoodEncoderAtUpperHardstop().ignoringDisable(true));
-
-        SmartDashboard.putData("Robot/Override Up", new ClimberOverrideUp());
-        SmartDashboard.putData("Robot/Override Down", new ClimberOverrideDown());
-        SmartDashboard.putData("Robot/Override Stop", new  ClimberOverrideStop());
     }
 
     /****************/
@@ -131,9 +123,6 @@ public class RobotContainer {
 
     private void configureDefaultCommands() {
         swerve.setDefaultCommand(new SwerveDriveDrive(driver));
-        // superstructure.setDefaultCommand(new SuperstructureDefaultCommand());
-        // climberHopper.setDefaultCommand(new ClimberHopperDefaultCommand());
-        // turret.setDefaultCommand(new TurretDefaultCommand());
     }
 
     /***************/
