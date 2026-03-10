@@ -73,6 +73,19 @@ public class Robot extends TimedRobot {
     //     SmartDashboard.putString("FMSUtil/Field State", fmsUtil.getCurrentFieldState().toString());
     }
 
+    /******************/
+    /*** SIMULATION ***/
+    /******************/
+    @Override
+    public void simulationInit() {
+        Simulation.getInstance().configure();
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        Simulation.getInstance().publish();
+    }
+
 
     /*********************/
     /*** DISABLED MODE ***/
@@ -154,15 +167,4 @@ public class Robot extends TimedRobot {
 
     @Override
     public void testExit() {}
-
-    public void simulationPeriod() {
-        SimulatedArena.getInstance().simulationPeriodic();
-        
-        Simulation.configure();;
-        Simulation.getInstance().publish();
-    }
-
-    // adding fuel: https://shenzhen-robotics-alliance.github.io/maple-sim/rebuilt/
-    // SimulatedArena.getInstance();
-    // SimulatedArena.overrideInstance(SimulatedArena newInstance); 
 }

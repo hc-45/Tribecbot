@@ -38,11 +38,6 @@
           "visible": true
         }
       },
-      "/SmartDashboard/Scheduler": {
-        "window": {
-          "visible": true
-        }
-      },
       "/SmartDashboard/Visualizers/Hood": {
         "window": {
           "visible": true
