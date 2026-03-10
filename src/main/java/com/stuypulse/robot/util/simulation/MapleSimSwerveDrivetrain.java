@@ -106,7 +106,6 @@ public class MapleSimSwerveDrivetrain {
             simModules[i] = new SimSwerveModule(moduleConstants[0], moduleSimulations[i], modules[i]);
 
         SimulatedArena.overrideSimulationTimings(simPeriod, 1);
-        SimulatedArena.getInstance().addDriveTrainSimulation(mapleSimDrive);
     }
 
     /**
