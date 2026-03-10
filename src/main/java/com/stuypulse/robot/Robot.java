@@ -8,8 +8,10 @@ package com.stuypulse.robot;
 import com.stuypulse.robot.commands.vision.SetIMUMode;
 import com.stuypulse.robot.commands.vision.SetMegaTagMode;
 import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.subsystems.vision.LimelightVision;
 import com.stuypulse.robot.util.FMSUtil;
+import com.stuypulse.robot.util.simulation.Simulation;
 
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -155,6 +157,9 @@ public class Robot extends TimedRobot {
 
     public void simulationPeriod() {
         SimulatedArena.getInstance().simulationPeriodic();
+        
+        Simulation.configure();;
+        Simulation.getInstance().publish();
     }
 
     // adding fuel: https://shenzhen-robotics-alliance.github.io/maple-sim/rebuilt/

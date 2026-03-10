@@ -8,6 +8,7 @@ package com.stuypulse.robot.subsystems.intake;
 import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
 import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.subsystems.superstructure.shooter.ShooterSim;
+import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.util.SysId;
 
 import edu.wpi.first.math.Nat;
@@ -35,7 +36,6 @@ import java.util.Optional;
 
 
 import org.ironmaple.simulation.IntakeSimulation;
-import org.ironmaple.simulation.drivesims.AbstractDriveTrainSimulation;
 
 public class IntakeSim extends Intake {
     private static final double ARM_LENGTH_METERS = 0.4;
@@ -57,7 +57,7 @@ public class IntakeSim extends Intake {
 
     private Optional<Double> pivotVoltageOverride;
 
-    private final IntakeSimulation intakeSimulation;
+    private IntakeSimulation intakeSimulation;
 
     public IntakeSim() {
         LinearSystem<N2, N1, N2> pivotSystem = LinearSystemId.createSingleJointedArmSystem(
@@ -130,15 +130,17 @@ public class IntakeSim extends Intake {
 
         pivotVoltageOverride = Optional.empty();
         
-        // Here, create the intake simulation with respect to the intake on your real robot
-        this.intakeSimulation = IntakeSimulation.OverTheBumperIntake(
-            "Fuel", 
-            SwerveDrive, //change to swervesim?
-            Meters.of(1.234),  //width
-            Meters.of(2.345), //extension length
-            IntakeSimulation.IntakeSide.FRONT, 
-            67); 
-        //TODO: CHANGE PARAMS (idk what they are)
+        // TODO: set params
+        if (CommandSwerveDrivetrain.getInstance().getMapleSimDrive() != null) {
+            this.intakeSimulation = IntakeSimulation.OverTheBumperIntake(
+                "Fuel", 
+                CommandSwerveDrivetrain.getInstance().getMapleSimDrive(),
+                Meters.of(1.234), 
+                Meters.of(2.345),
+                IntakeSimulation.IntakeSide.FRONT, 
+                67
+            ); 
+        }
 
     }
     @Override

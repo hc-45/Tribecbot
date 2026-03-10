@@ -68,10 +68,6 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
-import com.stuypulse.robot.subsystems.swerve.SwerveDrive;
-import com.stuypulse.robot.subsystems.swerve.SwerveDriveSim;
-
-
 public class RobotContainer {
     public interface EnabledSubsystems {
         SmartBoolean SWERVE = new SmartBoolean("Enabled Subsystems/Swerve Is Enabled", true);
@@ -358,15 +354,4 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         return autonChooser.getSelected();
     }
-
-
-    // This is simple approach step 2
-    private final SwerveDrive drive;
-    if (!Robot.isReal()) {
-        this.drive = new SwerveDriveSim(); // Simulation implementation
-    }
-    else {
-        this.drive = new SwerveDriveSim().getInstance(); // Real implementation
-    }
-    //shenzhen-robotics-alliance.github.io/maple-sim/swerve-sim-easy/
 }

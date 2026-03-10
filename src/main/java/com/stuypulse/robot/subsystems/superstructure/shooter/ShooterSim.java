@@ -8,6 +8,7 @@ package com.stuypulse.robot.subsystems.superstructure.shooter;
 import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
 import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.subsystems.superstructure.turret.TurretSim;
+import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.util.SysId;
 
 import edu.wpi.first.math.Nat;
@@ -108,24 +109,24 @@ public class ShooterSim extends Shooter {
                 getInstance());
     }
     
-    public static void launchFuel(){
-        RebuiltFuelOnFly fuelOnFly = new RebuiltFuelOnFly(
-        // Specify the position of the chassis when the note is launched
-        SwerveDriveSim.getPose(),
-        // Specify the translation of the shooter from the robot center (in the shooter’s reference frame)
-        new Translation2d(0.2, 0),
-        // Specify the field-relative speed of the chassis, adding it to the initial velocity of the projectile
-        chassisSpeedsFieldRelative,
-        // The shooter facing direction is the same as the robot’s facing direction
-        SwerveDriveSim.getInstance().getHeading()
-                // Add the shooter’s rotation
-                + TurretSim.getInstance().getAngle(),
-        // Initial height of the flying note
-        0.45,
-        // The launch speed is proportional to the RPM; assumed to be 16 meters/second at 6000 RPM
-        getVelocity() / 6000 * 20,
-        // The angle at which the note is launched
-        Math.toRadians(55)
-        );
-    }
+    // public static void launchFuel() {
+    //     RebuiltFuelOnFly fuelOnFly = new RebuiltFuelOnFly(
+    //     // Specify the position of the chassis when the note is launched
+    //     CommandSwerveDrivetrain.getInstance().getPose(),
+    //     // Specify the translation of the shooter from the robot center (in the shooter’s reference frame)
+    //     new Translation2d(0.2, 0),
+    //     // Specify the field-relative speed of the chassis, adding it to the initial velocity of the projectile
+    //     chassisSpeedsFieldRelative,
+    //     // The shooter facing direction is the same as the robot’s facing direction
+    //     SwerveDriveSim.getInstance().getHeading()
+    //             // Add the shooter’s rotation
+    //             + TurretSim.getInstance().getAngle(),
+    //     // Initial height of the flying note
+    //     0.45,
+    //     // The launch speed is proportional to the RPM; assumed to be 16 meters/second at 6000 RPM
+    //     getVelocity() / 6000 * 20,
+    //     // The angle at which the note is launched
+    //     Math.toRadians(55)
+    //     );
+    // }
 }
