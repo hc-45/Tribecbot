@@ -55,11 +55,7 @@ public abstract class Shooter extends SubsystemBase {
     public ShooterState getState() {
         return state;
     }
-
-    public static void launchFuel(){
-
-    }
-
+    
     public double getTargetRPM() {
         return switch(state) {
             case STOP -> 0;
