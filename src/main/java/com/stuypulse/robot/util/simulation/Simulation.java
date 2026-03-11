@@ -131,6 +131,14 @@ public class Simulation {
                     * Settings.Superstructure.Shooter.FLYWHEEL_RADIUS, Units.MetersPerSecond),
             Angle.ofBaseUnits(hoodSim.getAngle().getRadians(), Units.Radians)
         );
+        fuelOnFly
+            .withTargetPosition(() -> FieldMirroringUtils.toCurrentAllianceTranslation(new Translation3d(0.25, 5.56, 2.3)))
+            .withTargetTolerance(new Translation3d(0.6096, 0.5334, 0.000508)) // 24 in x 21 in x 0.02 in
+            .withHitTargetCallBack(() -> {})
+            .withTouchGroundHeight(0.1)
+            .enableBecomesGamePieceOnFieldAfterTouchGround();
+        // https://github.com/Shenzhen-Robotics-Alliance/maple-sim/blob/main/CLAUDE.md
+        ARENA.addGamepieceProjectile(fuelOnFly);
     }
 
     private void toggleIntakeSim(boolean deployed) {
