@@ -5,14 +5,15 @@
 /***************************************************************/
 package com.stuypulse.robot.subsystems.superstructure.hood;
 
+import com.stuypulse.stuylib.input.Gamepad;
+
 import com.stuypulse.robot.Robot;
 import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
 import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
+import com.stuypulse.robot.util.superstructure.InterpolationCalculator;
 import com.stuypulse.robot.util.superstructure.SOTMCalculator;
 import com.stuypulse.robot.util.superstructure.VisualizerHood;
-import com.stuypulse.robot.util.superstructure.InterpolationCalculator;
-import com.stuypulse.stuylib.input.Gamepad;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -49,6 +50,7 @@ public abstract class Hood extends SubsystemBase{
         SOTM,
         FOTM,
         ANALOG,
+        HOMING,
         IDLE;
     }
 
@@ -68,15 +70,20 @@ public abstract class Hood extends SubsystemBase{
         if (CommandSwerveDrivetrain.getInstance().isUnderTrench()) {
             return Settings.Superstructure.Hood.Angles.STOW;
         }
+        
+        if(Settings.Superstructure.Hood.Angles.OVERRIDEN.get()) {
+            return Rotation2d.fromDegrees(Settings.Superstructure.Hood.Angles.OVERRIDE_VALUE_DEG.get());
+        }
 
         return switch(state) {
             case STOW -> Settings.Superstructure.Hood.Angles.STOW;
-            case FERRY -> Rotation2d.fromDegrees(30);
+            case FERRY -> Rotation2d.fromDegrees(39);
             case SHOOT -> Rotation2d.fromDegrees(Settings.Superstructure.Hood.Angles.SHOOT.get());
             case KB -> Settings.Superstructure.Hood.Angles.KB;
             case LEFT_CORNER -> Settings.Superstructure.Hood.Angles.LEFT_CORNER;
             case RIGHT_CORNER -> Settings.Superstructure.Hood.Angles.RIGHT_CORNER;
             case INTERPOLATION -> InterpolationCalculator.interpolateShotInfo().targetHoodAngle();
+            case HOMING -> new Rotation2d(); //should just apply a voltage, not an angle!
             case SOTM -> SOTMCalculator.calculateHoodAngleSOTM();
             case FOTM -> SOTMCalculator.calculateHoodAngleFOTM();
             case ANALOG -> hoodAnalogToOutput();
@@ -87,9 +94,13 @@ public abstract class Hood extends SubsystemBase{
     public boolean atTolerance() {
         double error = getAngle().minus(getTargetAngle()).getRotations();
         if (Robot.isReal()) {
-            return Math.abs(error) < Settings.Superstructure.HOOD_TOLERANCE.getRotations();
+            if (state == HoodState.SOTM || state == HoodState.FOTM) {
+                return Math.abs(error) < Settings.Superstructure.HOOD_SOTM_TOLERANCE.getRotations();
+            } else {
+                return Math.abs(error) < Settings.Superstructure.HOOD_TOLERANCE.getRotations();
+            }
         } else {
-            return Math.abs(error) < Settings.Superstructure.HOOD_TOLERANCE.getRotations() + (0.5 / 360.0);
+            return Math.abs(error) < Settings.Superstructure.HOOD_TOLERANCE.getRotations() + (5 / 360.0);
         }
     }
 
@@ -112,6 +123,10 @@ public abstract class Hood extends SubsystemBase{
 
     public abstract void zeroHoodEncoderAtUpperHardstop();
     public abstract void seedHood();
+
+    public abstract void seedHoodAtUpperHardStop();
+    public abstract void zeroHoodEncodersAfterSeed();
+    
 
     @Override
     public void periodic() {

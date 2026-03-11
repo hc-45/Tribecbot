@@ -5,11 +5,23 @@
 /***************************************************************/
 package com.stuypulse.robot.subsystems.intake;
 
-import java.util.Optional;
+import com.stuypulse.stuylib.streams.booleans.BStream;
+import com.stuypulse.stuylib.streams.booleans.filters.BDebounce;
+
+import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
+import com.stuypulse.robot.constants.Gains;
+import com.stuypulse.robot.constants.Motors;
+import com.stuypulse.robot.constants.Ports;
+import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.util.SettableNumber;
+import com.stuypulse.robot.util.SysId;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -18,20 +30,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
-import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
-import com.stuypulse.robot.constants.Gains;
-import com.stuypulse.robot.constants.Motors;
-import com.stuypulse.robot.constants.Ports;
-import com.stuypulse.robot.constants.Settings;
-import com.stuypulse.robot.constants.Gains.Intake.Pivot;
-import com.stuypulse.robot.util.SettableNumber;
-import com.stuypulse.robot.util.SysId;
-import com.stuypulse.stuylib.streams.booleans.BStream;
-import com.stuypulse.stuylib.streams.booleans.filters.BDebounce;
-
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import java.util.Optional;
 
 public class IntakeImpl extends Intake {
     private final Motors.TalonFXConfig pivotConfig;
@@ -40,8 +39,6 @@ public class IntakeImpl extends Intake {
     private final TalonFX pivot;
     private final TalonFX rollerLeader;
     private final TalonFX rollerFollower;
-
-    private final MotionMagicVoltage pivotController;
 
     private final DutyCycleOut rollerController;
     private final Follower follower;
@@ -62,21 +59,18 @@ public class IntakeImpl extends Intake {
                 .withStatorCurrentLimitEnabled(false)
                 .withRampRate(0.25)
 
-                .withPIDConstants(Gains.Intake.Pivot.kP, Gains.Intake.Pivot.kI, Gains.Intake.Pivot.kD, 0)
-                .withFFConstants(Gains.Intake.Pivot.kS, Gains.Intake.Pivot.kV, Gains.Intake.Pivot.kA,
+                .withPIDConstants(Gains.Intake.Pivot.kP.get(), Gains.Intake.Pivot.kI.get(), Gains.Intake.Pivot.kD.get(), 0)
+                .withFFConstants(Gains.Intake.Pivot.kS.get(), Gains.Intake.Pivot.kV.get(), Gains.Intake.Pivot.kA.get(),
                         Gains.Intake.Pivot.kG, 0)
                 .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseVelocitySign, 0)
                 .withGravityType(GravityTypeValue.Arm_Cosine)
-                .withMotionProfile(Settings.Intake.PIVOT_MAX_VEL_STOW.getRotations(),
-                        Settings.Intake.PIVOT_MAX_ACCEL_STOW.getRotations())
 
                 .withSensorToMechanismRatio(Settings.Intake.GEAR_RATIO);
 
         rollerConfig = new Motors.TalonFXConfig()
                 .withInvertedValue(InvertedValue.CounterClockwise_Positive)
                 .withNeutralMode(NeutralModeValue.Brake)
-
-                .withSupplyCurrentLimitAmps(Settings.Intake.CURRENT_LIMIT)
+                .withSupplyCurrentLimitAmps(45.0)
                 .withStatorCurrentLimitEnabled(false)
                 .withRampRate(0.50);
 
@@ -89,14 +83,10 @@ public class IntakeImpl extends Intake {
         rollerFollower = new TalonFX(Ports.Intake.ROLLER_FOLLOWER, Ports.RIO);
         rollerConfig.configure(rollerFollower);
 
-        pivotController = new MotionMagicVoltage(getPivotState().getTargetAngle().getRotations()).withEnableFOC(true);
         rollerController = new DutyCycleOut(getRollerState().getTargetDutyCycle()).withEnableFOC(true);
         follower = new Follower(Ports.Intake.ROLLER_LEADER, MotorAlignmentValue.Aligned);
 
         rollerFollower.setControl(follower);
-
-        velLimit = new SettableNumber(Settings.Intake.PIVOT_MAX_VEL_DEPLOY.getDegrees());
-        accelLimit = new SettableNumber(Settings.Intake.PIVOT_MAX_ACCEL_DEPLOY.getDegrees());
 
         pivotVoltageOverride = Optional.empty();
 
@@ -123,26 +113,6 @@ public class IntakeImpl extends Intake {
         return Rotation2d.fromRotations(pivot.getPosition().getValueAsDouble());
     }
 
-    private void setMotionProfileConstraints(Rotation2d velLimit, Rotation2d accelLimit) {
-        this.velLimit.set(velLimit.getDegrees());
-        this.accelLimit.set(accelLimit.getDegrees());
-        pivotConfig.withMotionProfile(velLimit.getRotations(), accelLimit.getRotations());
-        pivotConfig.configure(pivot);
-    }
-
-    @Override
-    public void setPivotState(PivotState pivotState) {
-        super.setPivotState(pivotState);
-
-        if (getPivotState() == PivotState.STOW) {
-            setMotionProfileConstraints(Settings.Intake.PIVOT_MAX_VEL_STOW, Settings.Intake.PIVOT_MAX_ACCEL_STOW);
-        } else if (getPivotState() == PivotState.DEPLOY) {
-            setMotionProfileConstraints(Settings.Intake.PIVOT_MAX_VEL_DEPLOY, Settings.Intake.PIVOT_MAX_ACCEL_DEPLOY);
-        }
-
-        SmartDashboard.putString("Intake/Profile Constraints", getPivotState().name());
-    }
-
     @Override
     public void zeroPivotStowed() {
         pivot.setPosition(Settings.Intake.PIVOT_MAX_ANGLE.getRotations());
@@ -156,18 +126,31 @@ public class IntakeImpl extends Intake {
     @Override
     public void periodic() {
         super.periodic();
+
         PivotState pivotState = getPivotState();
+        
+        pivotConfig.updateGainsConfig(
+            pivot,
+            0,
+            Gains.Intake.Pivot.kP,
+            Gains.Intake.Pivot.kI,
+            Gains.Intake.Pivot.kD,
+            Gains.Intake.Pivot.kS,
+            Gains.Intake.Pivot.kV,
+            Gains.Intake.Pivot.kA
+        );
 
         if (EnabledSubsystems.INTAKE.get()) {
             if (pivotVoltageOverride.isPresent()) {
                 pivot.setVoltage(pivotVoltageOverride.get());
             } else {
                 // PIVOT
-                if (pivotState == PivotState.DEPLOY && getPivotAngle().getDegrees() <= Settings.Intake.ARBITRARY_VOLTAGE_THRESHOLD.getDegrees()) {
+                if (pivotState == PivotState.DEPLOY && getPivotAngle().getDegrees() <= Settings.Intake.ANGLE_THRESHOLD_FOR_HOLDING_VOLTAGE.getDegrees()) {
                     pivot.setControl(new VoltageOut(-Settings.Intake.PUSHDOWN_VOLTAGE)); // applying 3 volts
-                } else if (pivotState == PivotState.DIGESTION_DOWN || pivotState == PivotState.DIGESTION_UP) {
-                    pivot.setControl(new MotionMagicVoltage(pivotState.getTargetAngle().getRotations())); //TODO: verify motion profile works
-                } else {
+                } else if (pivotState == PivotState.HOMING) {
+                    pivot.setControl(new VoltageOut(-Settings.Intake.HOMING_VOLTAGE));
+                }
+                else {
                     pivot.setControl(new PositionVoltage(pivotState.getTargetAngle().getRotations()));
                 }
 
@@ -178,6 +161,10 @@ public class IntakeImpl extends Intake {
                     rollerLeader.stopMotor();
                 }
                 rollerFollower.setControl(follower);
+            }
+
+            if (pivotState == PivotState.HOMING && pivotStalling()) {
+                zeroPivotDeployed();
             }
         } else {
             pivot.stopMotor();
@@ -195,8 +182,8 @@ public class IntakeImpl extends Intake {
             SmartDashboard.putNumber("Intake/Pivot Supply Current (amps)", pivot.getSupplyCurrent().getValueAsDouble());
             SmartDashboard.putNumber("Intake/Pivot Stator Current (amps)", pivot.getStatorCurrent().getValueAsDouble());
 
-            SmartDashboard.putNumber("Intake/Pivot Max Velocity Limit (deg/s)", velLimit.get());
-            SmartDashboard.putNumber("Intake/Pivot Max Accel Limit (deg/s^2)", accelLimit.get());
+            // SmartDashboard.putNumber("Intake/Pivot Max Velocity Limit (deg/s)", velLimit.get()); Causing issues
+            // SmartDashboard.putNumber("Intake/Pivot Max Accel Limit (deg/s^2)", accelLimit.get()); Causing issues
 
             SmartDashboard.putNumber("Intake/Pivot Angle Error (deg)",
                     Math.abs(getPivotState().getTargetAngle().getDegrees() - getPivotAngle().getDegrees()));

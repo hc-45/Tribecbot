@@ -5,21 +5,12 @@
 /***************************************************************/
 package com.stuypulse.robot.commands.intake;
 
-import com.stuypulse.robot.subsystems.intake.Intake;
 import com.stuypulse.robot.subsystems.intake.Intake.PivotState;
 
-import edu.wpi.first.wpilibj2.command.InstantCommand;
+public class IntakeHoming extends IntakeSetState {
 
-public class ZeroPivotStowed extends InstantCommand {
-    private Intake intake;
-
-    public ZeroPivotStowed() {
-        intake = Intake.getInstance();
+    public IntakeHoming() { //TODO: ensure this works/overrides the Intake Deploy w/o conflicts
+        super(PivotState.HOMING);
     }
-
-    @Override
-    public void initialize() {
-        intake.zeroPivotStowed();
-        intake.setPivotState(PivotState.STOW);
-    }
+    
 }

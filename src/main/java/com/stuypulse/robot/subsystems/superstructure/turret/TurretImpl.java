@@ -49,7 +49,6 @@ public class TurretImpl extends Turret {
             .withSupplyCurrentLimitAmps(80)
             .withStatorCurrentLimitEnabled(false)
             .withRampRate(0.25)
-            // .withVoltageLimits(6, -6) //TODO: VERIFY MAX VOLTAGE
             
             .withPIDConstants(Gains.Superstructure.Turret.slot0.kP, Gains.Superstructure.Turret.slot0.kI, Gains.Superstructure.Turret.slot0.kD, 0)
             .withFFConstants(Gains.Superstructure.Turret.slot0.kS, Gains.Superstructure.Turret.slot0.kV, Gains.Superstructure.Turret.slot0.kA, 0)
@@ -122,7 +121,6 @@ public class TurretImpl extends Turret {
     }
 
     public void seedTurret() {
-        // motor.setPosition(0); //TODO: SEED USING CRT INSTEAD OF TS, TS IS TEMP
         turretMotor.setPosition(getVectorSpaceAngle().getRotations());
     }
 
@@ -135,23 +133,15 @@ public class TurretImpl extends Turret {
         return Rotation2d.fromRotations(turretMotor.getPosition().getValueAsDouble());
     }
     
-    @Override
-    public boolean atTolerance() {
-        double error = getAngle().minus(getTargetAngle()).getRotations();
-        return Math.abs(error) < Settings.Superstructure.Turret.TOLERANCE.getRotations();
-    }
-    
     private double getDelta(double target, double current) {
         double delta = (target - current) % 360;
         
         if (delta > 180.0) delta -= 360;
         else if (delta < -180) delta += 360;
 
-        // if (Math.abs(current + delta) < Settings.Superstructure.Turret.RANGE) return delta;
         if (current + delta < Settings.Superstructure.Turret.RANGE_LEFT) return delta + 360;
         if (current + delta > Settings.Superstructure.Turret.RANGE_RIGHT) return delta - 360;
 
-        // return delta < 0 ? delta + 360 : delta - 360;
         return delta;
     }
 
@@ -170,17 +160,15 @@ public class TurretImpl extends Turret {
         if (!hasUsedAbsoluteEncoder) {
             seedTurret();
             hasUsedAbsoluteEncoder = true;
-            System.out.println("Absolute Encoder Reset triggered");
         }
 
         double currentAngle = getAngle().getDegrees();
         double actualTargetDeg = currentAngle + getDelta(getTargetAngle().getDegrees(), currentAngle);
 
-        isWrapping =    Math.abs(actualTargetDeg - currentAngle) > 
-                        Settings.Superstructure.Turret.GAIN_SWITCHING_THRESHOLD.getDegrees();
+        isWrapping = Math.abs(actualTargetDeg - currentAngle) > Settings.Superstructure.Turret.GAIN_SWITCHING_THRESHOLD.getDegrees();
         int slot = 0;
 
-        if(isWrapping) {
+        if (isWrapping) {
             slot = 1;
         }
 

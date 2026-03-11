@@ -5,6 +5,8 @@
 /***************************************************************/
 package com.stuypulse.robot.subsystems.vision;
 
+import com.stuypulse.stuylib.network.SmartBoolean;
+
 import com.stuypulse.robot.Robot;
 import com.stuypulse.robot.constants.Cameras;
 import com.stuypulse.robot.constants.Settings;
@@ -12,7 +14,6 @@ import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.util.vision.LimelightHelpers;
 import com.stuypulse.robot.util.vision.LimelightHelpers.IMUData;
 import com.stuypulse.robot.util.vision.LimelightHelpers.PoseEstimate;
-import com.stuypulse.stuylib.network.SmartBoolean;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -94,14 +95,6 @@ public class LimelightVision extends SubsystemBase{
     public void disable() {
         enabled.set(false);
     }
-
-    // public void setCameraEnabled(String name, boolean enabled) {
-    //     for (int i = 0; i < names.length; i++) {
-    //         if (names[i].equals(name)) {
-    //             camerasEnabled[i].set(enabled);
-    //         }
-    //     } 
-    // }
 
     public void setMegaTagMode(MegaTagMode mode) {
         this.megaTagMode = mode;
@@ -198,15 +191,19 @@ public class LimelightVision extends SubsystemBase{
                     SmartDashboard.putNumber("Vision/Limelight Yaw", LimelightHelpers.getIMUData(limelightName).Yaw);
 
                 }
-                String limelightName = names[i];
-                SmartDashboard.putString("Vision/MegaTag Mode", megaTagMode.toString());
-                    // this yaw is seems to be the robot yaw passed into the LL
-                SmartDashboard.putNumber("Vision/Limelight Robot Yaw " + limelightName, LimelightHelpers.getIMUData(limelightName).robotYaw);
-                    // this is just the yaw of the internal imu 
-                SmartDashboard.putNumber("Vision/Limelight Yaw " + limelightName, LimelightHelpers.getIMUData(limelightName).Yaw);
-                SmartDashboard.putNumber("Vision/Limelight Robot Yaw Passed in", (CommandSwerveDrivetrain.getInstance().getPose().getRotation().getDegrees() + (Robot.isBlue() ? 0 : 180)) % 360);
+                if (Settings.DEBUG_MODE) {
+                    String limelightName = names[i];
+                    SmartDashboard.putString("Vision/MegaTag Mode", megaTagMode.toString());
+                        // this yaw is seems to be the robot yaw passed into the LL
+                    SmartDashboard.putNumber("Vision/Limelight Robot Yaw " + limelightName, LimelightHelpers.getIMUData(limelightName).robotYaw);
+                        // this is just the yaw of the internal imu 
+                    SmartDashboard.putNumber("Vision/Limelight Yaw " + limelightName, LimelightHelpers.getIMUData(limelightName).Yaw);
+                    SmartDashboard.putNumber("Vision/Limelight Robot Yaw Passed in", (CommandSwerveDrivetrain.getInstance().getPose().getRotation().getDegrees() + (Robot.isBlue() ? 0 : 180)) % 360);
+                }
             }
-            arrayPublisher.set(arrayOfLimelightPoses);
+            if (Settings.DEBUG_MODE) {
+                arrayPublisher.set(arrayOfLimelightPoses);
+            }
         }
     }
 }

@@ -7,8 +7,8 @@ package com.stuypulse.robot.subsystems.superstructure.shooter;
 
 import com.stuypulse.robot.Robot;
 import com.stuypulse.robot.constants.Settings;
-import com.stuypulse.robot.util.superstructure.SOTMCalculator;
 import com.stuypulse.robot.util.superstructure.InterpolationCalculator;
+import com.stuypulse.robot.util.superstructure.SOTMCalculator;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -57,10 +57,14 @@ public abstract class Shooter extends SubsystemBase {
     }
     
     public double getTargetRPM() {
+        if(Settings.Superstructure.Shooter.RPM.OVERRIDEN.get()) {
+            return Settings.Superstructure.Shooter.RPM.OVERRIDE_VALUE.get();
+        }
+        
         return switch(state) {
             case STOP -> 0;
             case SHOOT -> getShootRPM();
-            case FERRY -> InterpolationCalculator.interpolateFerryingRPM();
+            case FERRY -> InterpolationCalculator.interpolateFerryingInfo().targetRPM();
             case REVERSE -> Settings.Superstructure.Shooter.RPM.REVERSE;
             case KB -> Settings.Superstructure.Shooter.RPM.KB;
             case LEFT_CORNER -> Settings.Superstructure.Shooter.RPM.LEFT_CORNER;
@@ -76,8 +80,13 @@ public abstract class Shooter extends SubsystemBase {
     }
 
     public boolean atTolerance() {
-        double diff = Math.abs(getTargetRPM() - getRPM());
-        return diff < Settings.Superstructure.SHOOTER_TOLERANCE_RPM;
+        double error = Math.abs(getTargetRPM() - getRPM());
+
+        if (state == ShooterState.SOTM || state == ShooterState.FOTM) {
+            return error < Settings.Superstructure.SHOOTER_SOTM_TOLERANCE_RPM;
+        } else {
+            return error < Settings.Superstructure.SHOOTER_TOLERANCE_RPM;
+        }
     }
 
     public abstract double getRPM();

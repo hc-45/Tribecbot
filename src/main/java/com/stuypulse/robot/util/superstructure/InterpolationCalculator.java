@@ -1,6 +1,12 @@
+/************************ PROJECT TRIBECBOT *************************/
+/* Copyright (c) 2026 StuyPulse Robotics. All rights reserved. */
+/* Use of this source code is governed by an MIT-style license */
+/* that can be found in the repository LICENSE file.           */
+/***************************************************************/
 package com.stuypulse.robot.util.superstructure;
 
 import com.stuypulse.robot.constants.Field;
+import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.constants.Settings.Superstructure.AngleInterpolation;
 import com.stuypulse.robot.constants.Settings.Superstructure.FerryRPMInterpolation;
 import com.stuypulse.robot.constants.Settings.Superstructure.RPMInterpolation;
@@ -25,6 +31,12 @@ public class InterpolationCalculator {
         Rotation2d targetHoodAngle,
         double targetRPM,
         double flightTimeSeconds) {
+    }
+
+    public record InterpolatedFerryInfo(
+        Rotation2d targetHoodAngle,
+        double targetRPM,
+        double flightTimeSeconds) {   
     }
 
 
@@ -78,20 +90,38 @@ public class InterpolationCalculator {
             flightTime
         );
     }
+    
 
-    public static double interpolateFerryingRPM() {
+    public static InterpolatedFerryInfo interpolateFerryingInfo() {
         CommandSwerveDrivetrain swerve = CommandSwerveDrivetrain.getInstance();
-
-        Translation2d currentPose = swerve.getTurretPose().getTranslation();
-        Translation2d cornerPose = Field.getFerryZonePose(currentPose).getTranslation();
-
-        double distanceMeters = cornerPose.getDistance(currentPose);
-
-        double targetRPM = ferryingDistanceRPMInterpolator.get(distanceMeters);
-
-        SmartDashboard.putNumber("Superstructure/Interpolated Ferrying RPM", targetRPM);
+        Pose2d turretPose = swerve.getTurretPose();
         
-        return targetRPM;
+        return interpolateFerryingInfo(
+            turretPose,
+            Field.getFerryZonePose(turretPose.getTranslation())
+        );
+    }
+
+    public static InterpolatedFerryInfo interpolateFerryingInfo(Pose2d turretPose, Pose2d targetPose) {
+        
+        Translation2d currentPose = turretPose.getTranslation();
+        Translation2d ferryPose = targetPose.getTranslation();
+
+        double distanceMeters = currentPose.getDistance(ferryPose);
+
+        Rotation2d targetAngle = Rotation2d.fromDegrees(Settings.Superstructure.Hood.Angles.FERRY.getAsDouble());
+        double targetRPM = ferryingDistanceRPMInterpolator.get(distanceMeters);
+        double flightTime = 2.1;
+        
+        SmartDashboard.putNumber("Superstructure/Interpolated Ferry Target Angle", targetAngle.getDegrees());
+        SmartDashboard.putNumber("Superstructure/Interpolated Ferry RPM", targetRPM);
+        SmartDashboard.putNumber("Superstructure/Interpolated Ferry TOF", flightTime);
+
+        return new InterpolatedFerryInfo(
+            targetAngle, 
+            targetRPM, 
+            flightTime
+        );
     }
 
     

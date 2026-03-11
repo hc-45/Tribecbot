@@ -6,9 +6,37 @@
 package com.stuypulse.robot.subsystems.swerve;
 
 import static edu.wpi.first.units.Units.*;
-
-import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+
+import com.stuypulse.stuylib.math.Angle;
+import com.stuypulse.stuylib.math.Vector2D;
+
+import com.stuypulse.robot.Robot;
+import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
+import com.stuypulse.robot.constants.Field;
+import com.stuypulse.robot.constants.Gains;
+import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.subsystems.superstructure.turret.Turret;
+import com.stuypulse.robot.subsystems.swerve.TunerConstants.TunerSwerveDrivetrain;
+import com.stuypulse.robot.util.simulation.MapleSimSwerveDrivetrain;
+
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
@@ -21,42 +49,6 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.PathPlannerLogging;
-import com.stuypulse.robot.Robot;
-import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
-import com.stuypulse.robot.constants.Field;
-import com.stuypulse.robot.constants.Gains;
-import com.stuypulse.robot.constants.Settings;
-import com.stuypulse.robot.subsystems.superstructure.turret.Turret;
-import com.stuypulse.robot.subsystems.swerve.TunerConstants.TunerSwerveDrivetrain;
-import com.stuypulse.robot.util.simulation.MapleSimSwerveDrivetrain;
-import com.stuypulse.robot.util.simulation.Simulation;
-import com.stuypulse.stuylib.math.Angle;
-import com.stuypulse.stuylib.math.Vector2D;
-
-import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Twist2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.
@@ -124,7 +116,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SysIdRoutine m_sysIdRoutineChassisTranslation = new SysIdRoutine(
         new SysIdRoutine.Config(
             /* This is in meters per second², but SysId only supports "volts per second" */
-            Volts.of(1).per(Second),
+            Volts.of(0.5).per(Second),
             /* This is in meters per second, but SysId only supports "volts" */
             Volts.of(Settings.Swerve.Constraints.MAX_VELOCITY_M_PER_S),
             null, // Use default timeout (10 s)
@@ -134,7 +126,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         new SysIdRoutine.Mechanism(
             output -> {
                 /* output is actually meters per second, but SysId only supports "volts" */
-                setControl(getFieldCentricSwerveRequest().withVelocityX(output.in(Volts)).withVelocityY(0).withRotationalRate(0));
+                setControl(getRobotCentricSwerveRequest().withVelocityX(output.in(Volts)).withVelocityY(0).withRotationalRate(0));
                 /* also log the requested output for SysId */
                 SignalLogger.writeDouble("Target X Velocity ('voltage')", output.in(Volts));
                 SignalLogger.writeDouble("X Position", getPose().getX());
@@ -191,7 +183,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     );
 
     /* The SysId routine to test */
-    private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineModuleTranslation;
+    private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineChassisTranslation;
 
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -493,15 +485,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public boolean isUnderTrench() {
         Translation2d turretTranslation = getTurretPose().getTranslation();
 
-        boolean isBetweenRightTrenchesY = Field.NearRightTrench.rightEdge.getY() < turretTranslation.getY() && Field.NearRightTrench.leftEdge.getY() > turretTranslation.getY();
+        boolean isBetweenRightTrenchesY = Field.AllianceRightTrench.rightEdge.getY() < turretTranslation.getY() && Field.AllianceRightTrench.leftEdge.getY() > turretTranslation.getY();
 
-        boolean isBetweenLeftTrenchesY = Field.NearLeftTrench.rightEdge.getY() < turretTranslation.getY() && Field.NearLeftTrench.leftEdge.getY() > turretTranslation.getY();
+        boolean isBetweenLeftTrenchesY = Field.AllianceLeftTrench.rightEdge.getY() < turretTranslation.getY() && Field.AllianceLeftTrench.leftEdge.getY() > turretTranslation.getY();
 
-        boolean isCloseToAllianceSideTrenchX = Math.abs(turretTranslation.getX() - Field.NearRightTrench.rightEdge.getX()) < Field.trenchHoodTolerance;
+        boolean isUnderAllianceTrenchX = Math.abs(turretTranslation.getX() - Field.AllianceRightTrench.rightEdge.getX()) < Field.TRENCH_HOOD_TOLERANCE;
 
-        boolean isCloseToNeutralSideTrenchX = Math.abs(turretTranslation.getX() - Field.FarRightTrench.rightEdge.getX()) < Field.trenchHoodTolerance;
+        boolean isUnderOpponentTrenchX = Math.abs(turretTranslation.getX() - Field.OpponentRightTrench.rightEdge.getX()) < Field.TRENCH_HOOD_TOLERANCE;
 
-        boolean isUnderTrench = (isBetweenRightTrenchesY || isBetweenLeftTrenchesY) && (isCloseToAllianceSideTrenchX || isCloseToNeutralSideTrenchX);
+        boolean isUnderTrench = (isBetweenRightTrenchesY || isBetweenLeftTrenchesY) && (isUnderAllianceTrenchX || isUnderOpponentTrenchX);
         
         return isUnderTrench;
     }
@@ -527,6 +519,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return behindHubX && withinHubY;
     }
 
+    public boolean isOutsideAllianceZone() {
+        return getPose().getX() > Field.AllianceRightTrench.rightEdge.getX() + Field.TRENCH_HOOD_TOLERANCE;
+    }
+    
     @Override
     public void periodic() {
         Pose2d pose = mapleSimSwerveDrivetrain != null ? mapleSimSwerveDrivetrain.mapleSimDrive.getSimulatedDriveTrainPose() : getPose(); // only use maplesim pose if simming
@@ -580,7 +576,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Swerve/Velocity Field Relative Y (m per s)", getFieldRelativeSpeeds().y);
         
         SmartDashboard.putNumber("Swerve/Angular Velocity (rad per s)", chassisSpeeds.omegaRadiansPerSecond);
-        
         SmartDashboard.putNumber("Swerve/Distance From Hub (meters)", Field.hubCenter.getTranslation().getDistance(getPose().getTranslation()));
     }
 }

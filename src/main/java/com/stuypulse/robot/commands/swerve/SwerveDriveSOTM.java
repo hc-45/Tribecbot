@@ -17,30 +17,37 @@ import com.stuypulse.stuylib.streams.vectors.filters.VRateLimit;
 
 import com.stuypulse.robot.constants.DriverConstants.Driver.Drive;
 import com.stuypulse.robot.constants.DriverConstants.Driver.Turn;
+import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.constants.Settings.Swerve;
+import com.stuypulse.robot.subsystems.superstructure.Superstructure;
+import com.stuypulse.robot.subsystems.superstructure.Superstructure.SuperstructureState;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 
-public class SwerveDriveDrive extends Command {
+public class SwerveDriveSOTM extends Command {
 
     private final CommandSwerveDrivetrain swerve;
+    private final Superstructure superstructure;
 
     private final Gamepad driver;
 
     private final VStream speed;
     private final IStream turn;
 
-    public SwerveDriveDrive(Gamepad driver) {
-        swerve = CommandSwerveDrivetrain.getInstance();
+ 
+    public SwerveDriveSOTM(Gamepad driver) {
+       swerve = CommandSwerveDrivetrain.getInstance();
+        superstructure = Superstructure.getInstance();
 
         speed = VStream.create(this::getDriverInputAsVelocity)
         .filtered(
             new VDeadZone(Drive.DEADBAND), 
             x -> x.clamp(1),
             x -> x.pow(Drive.POWER),
-            x -> x.mul(Swerve.Constraints.MAX_VELOCITY_M_PER_S),
-            new VRateLimit(Swerve.Constraints.MAX_ACCEL_M_PER_S_SQUARED),
+            x -> x.mul(Swerve.Constraints.MAX_VELOCITY_SOTM_M_PER_S),
+            new VRateLimit(Settings.Swerve.Constraints.MAX_ACCEL_M_PER_S_SQUARED_SOTM),
             new VLowPassFilter(Drive.RC)
         );
 
@@ -48,7 +55,7 @@ public class SwerveDriveDrive extends Command {
         .filtered(
             x -> SLMath.deadband(x, Turn.DEADBAND),
             x -> SLMath.spow(x, Turn.POWER),
-            x -> x * Swerve.Constraints.MAX_ANGULAR_VEL_RAD_PER_S,
+            x -> x * Swerve.Constraints.MAX_ANGULAR_VEL_SOTM_RAD_PER_S,
             new LowPassFilter(Turn.RC)
         );
 
@@ -63,10 +70,23 @@ public class SwerveDriveDrive extends Command {
 
     @Override
     public void execute() {
+
         swerve.setControl(swerve.getFieldCentricSwerveRequest()
             .withVelocityX(speed.get().x)
             .withVelocityY(speed.get().y)
-            .withRotationalRate(-turn.getAsDouble())
-        );
+            .withRotationalRate(-turn.get()));
+
+        SmartDashboard.putNumber("Swerve/Speed x", speed.get().x);
+        SmartDashboard.putNumber("Swerve/Speed y", speed.get().y);
+    }
+
+    @Override 
+    public boolean isFinished() {
+        SuperstructureState state = superstructure.getState();
+        if (state == SuperstructureState.SOTM) {
+            return false;
+        } else {
+            return true;
+        }
     }
 }

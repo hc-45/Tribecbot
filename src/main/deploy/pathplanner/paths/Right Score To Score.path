@@ -3,16 +3,16 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.42896797153025,
-        "y": 0.5006049822064051
+        "x": 3.042781740370898,
+        "y": 0.5221540656205423
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.656120996441281,
-        "y": 0.4145314353499395
+        "x": 6.859686162624821,
+        "y": 0.4703994293865924
       },
       "isLocked": false,
-      "linkedName": "Right Trench Start"
+      "linkedName": "Right Trench Score"
     },
     {
       "anchor": {
@@ -20,12 +20,12 @@
         "y": 3.4271055753262156
       },
       "prevControl": {
-        "x": 6.010569395017794,
-        "y": 0.6727520759193353
+        "x": 6.186875891583452,
+        "y": 0.2504422253922973
       },
       "nextControl": {
-        "x": 5.981149519717918,
-        "y": 4.438496114303611
+        "x": 5.924849720295674,
+        "y": 4.458047058785347
       },
       "isLocked": false,
       "linkedName": null
@@ -53,7 +53,7 @@
       },
       "prevControl": {
         "x": 7.118173588922177,
-        "y": 1.6648785526089203
+        "y": 1.6648785526089207
       },
       "nextControl": {
         "x": 7.172562277580072,
@@ -64,12 +64,12 @@
     },
     {
       "anchor": {
-        "x": 4.052396204033215,
-        "y": 0.6512336892052202
+        "x": 3.5991440798858774,
+        "y": 0.71623395149786
       },
       "prevControl": {
-        "x": 6.171957295373667,
-        "y": 0.6512336892052202
+        "x": 5.718705171226329,
+        "y": 0.71623395149786
       },
       "nextControl": null,
       "isLocked": false,
@@ -86,26 +86,40 @@
       "rotationDegrees": -90.0
     }
   ],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 3.467854869509843,
+      "maxWaypointRelativePos": 4.0,
+      "constraints": {
+        "maxVelocity": 2.0,
+        "maxAcceleration": 3.0,
+        "maxAngularVelocity": 300.0,
+        "maxAngularAcceleration": 900.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 5.75,
-    "maxAcceleration": 6.75,
-    "maxAngularVelocity": 400.0,
+    "maxVelocity": 2.0,
+    "maxAcceleration": 5.0,
+    "maxAngularVelocity": 300.0,
     "maxAngularAcceleration": 900.0,
     "nominalVoltage": 12.0,
-    "unlimited": true
+    "unlimited": false
   },
   "goalEndState": {
-    "velocity": 5.75,
+    "velocity": 0.0,
     "rotation": -90.0
   },
   "reversed": false,
-  "folder": "To NZ",
+  "folder": "To Score",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 90.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }

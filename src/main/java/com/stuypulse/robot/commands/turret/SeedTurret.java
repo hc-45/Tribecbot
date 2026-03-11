@@ -3,22 +3,24 @@
 /* Use of this source code is governed by an MIT-style license */
 /* that can be found in the repository LICENSE file.           */
 /***************************************************************/
-package com.stuypulse.robot.commands.vision;
+package com.stuypulse.robot.commands.turret;
 
-import com.stuypulse.robot.subsystems.vision.LimelightVision;
+import com.stuypulse.robot.subsystems.superstructure.turret.Turret;
 
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 
-public class SetIMUAssistValue extends InstantCommand {
-    private LimelightVision vision;
-    private double assistValue;
+public class SeedTurret extends InstantCommand {
 
-    public SetIMUAssistValue(double assistValue) {
-        vision = LimelightVision.getInstance();
+    private final Turret turret;
+
+    public SeedTurret() {
+        this.turret = Turret.getInstance();
+
+        addRequirements(turret);
     }
 
     @Override
     public void initialize() {
-        vision.setIMUAssistValue(assistValue);
+        turret.seedTurret();
     }
 }

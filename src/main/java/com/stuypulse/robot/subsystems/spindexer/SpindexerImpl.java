@@ -5,12 +5,15 @@
 /***************************************************************/
 package com.stuypulse.robot.subsystems.spindexer;
 
+import com.stuypulse.stuylib.streams.booleans.BStream;
+import com.stuypulse.stuylib.streams.booleans.filters.BDebounce;
+
 import com.stuypulse.robot.RobotContainer.EnabledSubsystems;
 import com.stuypulse.robot.constants.Gains;
 import com.stuypulse.robot.constants.Motors;
 import com.stuypulse.robot.constants.Ports;
 import com.stuypulse.robot.constants.Settings;
-import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
+import com.stuypulse.robot.subsystems.superstructure.Superstructure;
 import com.stuypulse.robot.util.SysId;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -33,6 +36,7 @@ public class SpindexerImpl extends Spindexer {
 
     private final VelocityVoltage controller;
     private final Follower follower;
+    private final BStream isStalling;
 
     private Optional<Double> voltageOverride;
 
@@ -72,6 +76,9 @@ public class SpindexerImpl extends Spindexer {
         controller = new VelocityVoltage(getTargetRPM()).withEnableFOC(true);
         follower = new Follower(Ports.Spindexer.SPINDEXER_LEAD_MOTOR, MotorAlignmentValue.Aligned);
 
+        isStalling = BStream.create(() -> leadMotor.getSupplyCurrent().getValueAsDouble() > Settings.Spindexer.STALL_CURRENT_LIMIT)
+                .filtered(new BDebounce.Both(Settings.Superstructure.Hood.STALL_DEBOUNCE));
+
         followerMotor.setControl(follower);
 
         voltageOverride = Optional.empty();
@@ -99,7 +106,9 @@ public class SpindexerImpl extends Spindexer {
                 leadMotor.setVoltage(voltageOverride.get());
             } else {
                 // DO NOT REMOVE BELOW LINE - needed to brake the motor in STOP state
-                if (atTolerance() && getState() == SpindexerState.STOP) {
+                if (getState() == SpindexerState.STOP) {
+                    leadMotor.stopMotor();
+                } else if (Superstructure.getInstance().isTurretWrapping()) {
                     leadMotor.stopMotor();
                 } else {
                     leadMotor.setControl(controller.withVelocity(getTargetRPM() / Settings.SECONDS_IN_A_MINUTE));
@@ -126,6 +135,10 @@ public class SpindexerImpl extends Spindexer {
             SmartDashboard.putNumber("Current Draws/Spindexer Leader (amps)", leadMotor.getSupplyCurrent().getValueAsDouble());
             SmartDashboard.putNumber("Current Draws/Spindexer Follower (amps)", followerMotor.getSupplyCurrent().getValueAsDouble());
         }
+    }
+
+    public boolean isStalling() {
+        return isStalling.get();
     }
 
     @Override

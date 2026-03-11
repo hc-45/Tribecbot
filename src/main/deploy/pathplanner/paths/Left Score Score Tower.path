@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.020118623962041,
-        "y": 7.590913404507711
+        "x": 3.600510083036774,
+        "y": 7.580154211150653
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.376381969162431,
-        "y": 7.5909134045129925
+        "x": 5.956773428237163,
+        "y": 7.580154211155934
       },
       "isLocked": false,
       "linkedName": "Left Trench Score"
@@ -110,21 +110,21 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 5.75,
-    "maxAcceleration": 6.75,
-    "maxAngularVelocity": 400.0,
+    "maxVelocity": 2.0,
+    "maxAcceleration": 5.0,
+    "maxAngularVelocity": 300.0,
     "maxAngularAcceleration": 900.0,
     "nominalVoltage": 12.0,
-    "unlimited": true
+    "unlimited": false
   },
   "goalEndState": {
-    "velocity": 5.75,
+    "velocity": 0.0,
     "rotation": 0.0
   },
   "reversed": false,
   "folder": "To Tower",
   "idealStartingState": {
-    "velocity": 5.75,
+    "velocity": 0.0,
     "rotation": -90.0
   },
   "useDefaultConstraints": true

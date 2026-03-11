@@ -5,7 +5,6 @@
 /***************************************************************/
 package com.stuypulse.robot.subsystems.superstructure;
 
-import com.stuypulse.robot.constants.Field;
 import com.stuypulse.robot.subsystems.superstructure.hood.Hood;
 import com.stuypulse.robot.subsystems.superstructure.hood.Hood.HoodState;
 import com.stuypulse.robot.subsystems.superstructure.shooter.Shooter;
@@ -15,7 +14,6 @@ import com.stuypulse.robot.subsystems.superstructure.turret.Turret.TurretState;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.util.superstructure.SOTMCalculator;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -46,15 +44,16 @@ public class Superstructure extends SubsystemBase {
     }
     
     public enum SuperstructureState {
-        STOW(HoodState.STOW, ShooterState.SHOOT, TurretState.SHOOT),
+        STOW(HoodState.STOW, ShooterState.INTERPOLATION, TurretState.SHOOT),
         SHOOT(HoodState.SHOOT, ShooterState.SHOOT, TurretState.SHOOT),
         FERRY(HoodState.FERRY, ShooterState.FERRY, TurretState.FERRY),
         FOTM(HoodState.FOTM, ShooterState.FOTM, TurretState.FOTM),
         REVERSE(HoodState.SHOOT, ShooterState.REVERSE, TurretState.SHOOT),
         KB(HoodState.KB, ShooterState.KB, TurretState.KB),
-        LEFT_CORNER(HoodState.LEFT_CORNER, ShooterState.LEFT_CORNER, TurretState.SHOOT),
-        RIGHT_CORNER(HoodState.RIGHT_CORNER, ShooterState.RIGHT_CORNER, TurretState.SHOOT),
+        LEFT_CORNER(HoodState.LEFT_CORNER, ShooterState.LEFT_CORNER, TurretState.LEFT_CORNER),
+        RIGHT_CORNER(HoodState.RIGHT_CORNER, ShooterState.RIGHT_CORNER, TurretState.RIGHT_CORNER),
         INTERPOLATION(HoodState.INTERPOLATION, ShooterState.INTERPOLATION, TurretState.SHOOT),
+        AUTO_INTERPOLATION(HoodState.STOW, ShooterState.INTERPOLATION, TurretState.SHOOT),
         SOTM(HoodState.SOTM, ShooterState.SOTM, TurretState.SOTM);
 
         private HoodState hoodState;
@@ -94,11 +93,7 @@ public class Superstructure extends SubsystemBase {
     public boolean atTolerance() {
         return isShooterAtTolerance() && isHoodAtTolerance() && isTurretAtTolerance();
     }
-
-    // public boolean isHoodUnderTrench() {
-    //     return hood.isUnderTrench();
-    // }
-
+    
     public boolean isShooterAtTolerance() {
         return shooter.atTolerance();
     }
@@ -127,15 +122,21 @@ public class Superstructure extends SubsystemBase {
         return turret.getAngle();
     }
 
-    public boolean isWrapping() {
+    public boolean isTurretWrapping() {
         return turret.isWrapping();
     }
 
     @Override
     public void periodic() {
         SuperstructureState state = getState();
-        if (state == SuperstructureState.SOTM || state == SuperstructureState.FOTM) {
+        if (state == SuperstructureState.SOTM) {
             SOTMCalculator.updateSOTMSolution();
+        } else if (state == SuperstructureState.FOTM){
+            SOTMCalculator.updateFOTMSolution();
+        }
+        
+        if (CommandSwerveDrivetrain.getInstance().isOutsideAllianceZone() && state == SuperstructureState.SOTM) {
+            setState(SuperstructureState.FERRY);
         }
 
         SmartDashboard.putString("Superstructure/State", state.name());
@@ -144,9 +145,5 @@ public class Superstructure extends SubsystemBase {
         SmartDashboard.putBoolean("Superstructure/Shooter At Tolerance?", isShooterAtTolerance());
         SmartDashboard.putBoolean("Superstructure/Hood At Tolerance?", isHoodAtTolerance());
         SmartDashboard.putBoolean("Superstructure/Turret At Tolerance?", isTurretAtTolerance());
-        SmartDashboard.putBoolean("Superstructure/Everything At Tolerance?", atTolerance());
-
-        SmartDashboard.putNumber("InterpolationTesting/Current Hood Angle", getHoodAngle().getDegrees());
-        SmartDashboard.putNumber("InterpolationTesting/Current Shooter RPM", getShooterRPM());
     }
 }
