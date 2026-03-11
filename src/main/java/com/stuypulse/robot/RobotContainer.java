@@ -8,25 +8,34 @@ package com.stuypulse.robot;
 import org.ironmaple.simulation.SimulatedArena;
 
 import com.stuypulse.robot.commands.auton.DoNothingAuton;
-import com.stuypulse.robot.commands.auton.poaching.BottomOneCyclePoach;
-import com.stuypulse.robot.commands.auton.poaching.BottomTwoCyclePoach;
-import com.stuypulse.robot.commands.auton.poaching.TopOneCyclePoach;
-import com.stuypulse.robot.commands.auton.poaching.TopTwoCyclePoach;
-import com.stuypulse.robot.commands.auton.regular.BottomTwoCycle;
+import com.stuypulse.robot.commands.auton.regular.RightTwoCycle;
+// import com.stuypulse.robot.commands.auton.test.BoxTest;
 import com.stuypulse.robot.commands.auton.regular.DepotAuton;
 import com.stuypulse.robot.commands.auton.regular.EightFuel;
-import com.stuypulse.robot.commands.auton.regular.TopTwoCycle;
+import com.stuypulse.robot.commands.auton.regular.LeftOneCycle;
+import com.stuypulse.robot.commands.auton.regular.LeftTwoCycle;
+import com.stuypulse.robot.commands.auton.regular.RightOneCycle;
+import com.stuypulse.robot.commands.climberhopper.ClimberDown;
+import com.stuypulse.robot.commands.climberhopper.ClimberOverrideDown;
+import com.stuypulse.robot.commands.climberhopper.ClimberOverrideStop;
+import com.stuypulse.robot.commands.climberhopper.ClimberOverrideUp;
 import com.stuypulse.robot.commands.handoff.HandoffConditionalCommand;
+import com.stuypulse.robot.commands.handoff.HandoffReverse;
+import com.stuypulse.robot.commands.climberhopper.ClimberUp;
+import com.stuypulse.robot.commands.climberhopper.HopperDown;
 import com.stuypulse.robot.commands.handoff.HandoffRun;
 import com.stuypulse.robot.commands.handoff.HandoffStop;
 import com.stuypulse.robot.commands.hood.ZeroHoodEncoderAtUpperHardstop;
 import com.stuypulse.robot.commands.intake.IntakeDeploy;
+// import com.stuypulse.robot.commands.intake.IntakeDigestion;
 import com.stuypulse.robot.commands.intake.IntakeRunRollers;
+import com.stuypulse.robot.commands.intake.IntakeSetState;
 import com.stuypulse.robot.commands.intake.IntakeStopRollers;
 import com.stuypulse.robot.commands.intake.IntakeStow;
 import com.stuypulse.robot.commands.intake.ZeroPivotDeployed;
 import com.stuypulse.robot.commands.intake.ZeroPivotStowed;
 import com.stuypulse.robot.commands.spindexer.SpindexerConditionalCommand;
+import com.stuypulse.robot.commands.spindexer.SpindexerReverse;
 import com.stuypulse.robot.commands.spindexer.SpindexerRun;
 import com.stuypulse.robot.commands.spindexer.SpindexerStop;
 import com.stuypulse.robot.commands.superstructure.SuperstructureFOTM;
@@ -51,6 +60,7 @@ import com.stuypulse.robot.subsystems.superstructure.hood.Hood;
 import com.stuypulse.robot.subsystems.superstructure.shooter.Shooter;
 import com.stuypulse.robot.subsystems.superstructure.turret.Turret;
 import com.stuypulse.robot.subsystems.intake.Intake;
+import com.stuypulse.robot.subsystems.intake.Intake.RollerState;
 import com.stuypulse.robot.subsystems.spindexer.Spindexer;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.subsystems.vision.LimelightVision;
@@ -116,6 +126,14 @@ public class RobotContainer {
         SmartDashboard.putData("Robot/Zero Pivot Encoder at Upper Limit (Stowed)", new ZeroPivotStowed().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Turret Encoders", new ZeroTurret().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Hood Encoder", new ZeroHoodEncoderAtUpperHardstop().ignoringDisable(true));
+
+        SmartDashboard.putData("Robot/Override Up", new ClimberOverrideUp());
+        SmartDashboard.putData("Robot/Override Down", new ClimberOverrideDown());
+        SmartDashboard.putData("Robot/Override Stop", new  ClimberOverrideStop());
+        SmartDashboard.putData("Handoff Reverse", new HandoffReverse());
+        SmartDashboard.putData("Intake Reverse", new IntakeSetState(RollerState.OUTTAKE));
+        SmartDashboard.putData("Spindexer Reverse", new SpindexerReverse());
+       
     }
     
     /****************/
@@ -162,6 +180,53 @@ public class RobotContainer {
         // Stop Rollers
         driver.getLeftBumper()
             .onTrue(new IntakeStopRollers());
+
+        // SOTM
+        // driver.getRightMenuButton()
+        //         .whileTrue(new SuperstructureSOTM().onlyIf(() -> !swerve.isUnderTrench())
+        //                 .andThen(new WaitUntilCommand(superstructure::atTolerance))
+        //                 .andThen(new HandoffConditionalCommand().onlyIf(superstructure::atTolerance)
+        //                         .alongWith(new WaitUntilCommand(handoff::atTolerance))
+        //                         .andThen(new SpindexerConditionalCommand().onlyIf(() -> handoff.atTolerance() && superstructure.atTolerance()))))
+        //         .onFalse(new SpindexerStop()
+        //                 .alongWith(new SuperstructureStow())
+        //                 .alongWith(new HandoffStop()));
+
+        // Scoring SOTM
+        // driver.getRightMenuButton()
+        //     .onTrue(new ConditionalCommand(
+        //         new ParallelCommandGroup(
+        //             new SuperstructureInterpolation(),
+        //             new SpindexerStop(),
+        //             new HandoffStop()
+        //         ),
+        //         new SuperstructureSOTM().alongWith(new WaitUntilCommand(() -> superstructure.atTolerance()))
+        //             .andThen(new SpindexerRun()).alongWith(new HandoffRun()),
+        //         () -> superstructure.getState() == SuperstructureState.SOTM
+        //     ));
+
+        // driver.getDPadDown()
+        //     .whileTrue(new IntakeDigestion())
+        //     .onFalse(new IntakeDeploy());
+
+        // Test Turret
+        // driver.getBottomButton()
+        //     .whileTrue(new TurretShoot())
+        //     .onFalse(new TurretIdle());
+
+        // Scoring Routine
+        // driver.getBottomButton()
+        //         .whileTrue(new SuperstructureShoot())//.onlyIf(() -> !superstructure.isHoodUnderTrench()))
+        //             // .alongWith(new SwerveDriveAlignTurretToHub())
+        //             // .alongWith(new TurretShoot())
+        //                 .andThen(new WaitUntilCommand(superstructure::atTolerance))
+        //                 .andThen(new HandoffRun())
+        //                         // .alongWith(new WaitUntilCommand(handoff::atTolerance))
+        //                 .andThen(new WaitUntilCommand(handoff::atTolerance))
+        //                 .andThen(new SpindexerRun()))
+        //         .onFalse(new SpindexerStop()
+        //                 .alongWith(new SuperstructureStow())
+        //                 .alongWith(new HandoffStop()));
 
         // driver.getRightBumper()
         //     .whileTrue(new IntakeOuttake())
@@ -227,6 +292,47 @@ public class RobotContainer {
         //         .andThen(new SpindexerRun()).alongWith(new HandoffRun()))
         //     .onFalse(new SuperstructureInterpolation().alongWith(new SpindexerStop()).alongWith(new HandoffStop()));
 
+        // // Reset Heading
+        // driver.getDPadUp()
+        //     .onTrue(new SwerveResetHeading())
+        //     .onTrue(new ResetLimelightIMU())
+        //     .onFalse(new SetIMUMode(0)); 
+
+        // // Ferrying In Place
+        // driver.getDPadRight()
+        //     .whileTrue(new SwerveXMode())
+        //     .whileTrue(new SuperstructureFerry().alongWith(new WaitUntilCommand(() -> superstructure.atTolerance()))
+        //         .andThen(new SpindexerRun()).alongWith(new HandoffRun()))
+        //     .onFalse(new SuperstructureFerry().alongWith(new SpindexerStop()).alongWith(new HandoffStop()));
+
+        // /** 
+        // // Ferrying SOTM
+        // driver.getLeftMenuButton()
+        //     .onTrue(new ConditionalCommand(
+        //         new ParallelCommandGroup(
+        //             new SuperstructureFerry(),
+        //             new SpindexerStop(),
+        //             new HandoffStop()
+        //         ),
+        //         new SuperstructureSOTM().alongWith(new WaitUntilCommand(() -> superstructure.atTolerance()))
+        //             .andThen(new SpindexerRun()).alongWith(new HandoffRun()),
+        //         () -> superstructure.getState() == SuperstructureState.SOTM
+        //     ));
+        // **/
+
+        // // Scoring SOTM
+        // driver.getRightMenuButton()
+        //     .onTrue(new ConditionalCommand(
+        //         new ParallelCommandGroup(
+        //             new SuperstructureInterpolation(),
+        //             new SpindexerStop(),
+        //             new HandoffStop()
+        //         ),
+        //         new SuperstructureSOTM().alongWith(new WaitUntilCommand(() -> superstructure.atTolerance()))
+        //             .andThen(new SpindexerRun()).alongWith(new HandoffRun()),
+        //         () -> superstructure.getState() == SuperstructureState.SOTM
+        //     ));
+
         // // Swerve X Wheels
         // driver.getLeftBumper()
         //     .whileTrue(new SwerveXMode());
@@ -248,7 +354,6 @@ public class RobotContainer {
 
         autonChooser.setDefaultOption("Do Nothing", new DoNothingAuton());
 
-        autonChooser.addOption("Wheel Radius", new SwerveWheelRadiusCharacterization());
         // TESTS
         // AutonConfig BOX_TEST = new AutonConfig("Box Test", BoxTest::new, 
         // "Box 1", "Box 2", "Box 3", "Box 4");
@@ -261,34 +366,26 @@ public class RobotContainer {
 
         // DEPOT
         AutonConfig DEPOT_AUTON = new AutonConfig("Depot Auton", DepotAuton::new, 
-        "Top Bump To Depot", "Depot To Tower Left");
+        "Left Bump To Depot", "Depot To Tower Left");
         DEPOT_AUTON.register(autonChooser);
 
         // ONE CYCLES
-        AutonConfig TOP_ONE_CYCLE_POACH = new AutonConfig("Top One Cycle (Poach)", TopOneCyclePoach::new,  
-        "Top Trench To NZ (P)", "Top NZ To Tower Left (P)");
-        TOP_ONE_CYCLE_POACH.register(autonChooser);
+        AutonConfig LEFT_ONE_CYCLE = new AutonConfig("Left One Cycle", LeftOneCycle::new,  
+        "Left Trench To NZ", "Left NZ To Score");
+        LEFT_ONE_CYCLE.register(autonChooser);
 
-        AutonConfig BOTTOM_ONE_CYCLE_POACH = new AutonConfig("Bottom One Cycle (Poach)", BottomOneCyclePoach::new,  
-        "Bottom Trench To NZ (P)", "Bottom NZ To Tower Right (P)");
-        BOTTOM_ONE_CYCLE_POACH.register(autonChooser);
+        AutonConfig RIGHT_ONE_CYCLE = new AutonConfig("Right One Cycle", RightOneCycle::new,  
+        "Right Trench To NZ", "Right NZ To Score");
+        RIGHT_ONE_CYCLE.register(autonChooser);
 
         // TWO CYCLES
-        AutonConfig TOP_TWO_CYCLE = new AutonConfig("Top Two Cycle", TopTwoCycle::new,  
-        "Top Trench To NZ", "Top NZ To Score", "Top Score To NZ", "Top NZ To Tower Left");
-        TOP_TWO_CYCLE.register(autonChooser);
+        AutonConfig LEFT_TWO_CYCLE = new AutonConfig("Left Two Cycle", LeftTwoCycle::new,  
+        "Left Trench To NZ", "Left NZ To Score", "Left Score To Score");
+        LEFT_TWO_CYCLE.register(autonChooser);
 
-        AutonConfig BOTTOM_TWO_CYCLE = new AutonConfig("Bottom Two Cycle", BottomTwoCycle::new,  
-        "Bottom Trench To NZ", "Bottom NZ To Score", "Bottom Score To NZ", "Bottom NZ To Tower Right");
-        BOTTOM_TWO_CYCLE.register(autonChooser);
-
-        AutonConfig TOP_TWO_CYCLE_POACH = new AutonConfig("Top Two Cycle (Poach)", TopTwoCyclePoach::new,  
-        "Top Trench To NZ (P)", "Top NZ To Score (P)", "Top Score To NZ", "Top NZ To Tower Left");  
-        TOP_TWO_CYCLE_POACH.register(autonChooser);
-
-        AutonConfig BOTTOM_TWO_CYCLE_POACH = new AutonConfig("Bottom Two Cycle (Poach)", BottomTwoCyclePoach::new,  
-        "Bottom Trench To NZ (P)", "Bottom NZ To Score (P)", "Bottom Score To NZ", "Bottom NZ To Tower Right");
-        BOTTOM_TWO_CYCLE_POACH.register(autonChooser);
+        AutonConfig RIGHT_TWO_CYCLE = new AutonConfig("Right Two Cycle", RightTwoCycle::new,  
+        "Right Trench To NZ", "Right NZ To Score", "Right Score To Score");
+        RIGHT_TWO_CYCLE.register(autonChooser);
 
         SmartDashboard.putData("Autonomous", autonChooser);
 
@@ -296,15 +393,15 @@ public class RobotContainer {
 
     public void configureSysids() {
 
-        autonChooser.addOption("SysID Module Translation Dynamic Forwards", swerve.sysIdDynamic(Direction.kForward));
-        autonChooser.addOption("SysID Module Translation Dynamic Backwards", swerve.sysIdDynamic(Direction.kReverse));
-        autonChooser.addOption("SysID Module Translation Quasi Forwards", swerve.sysIdQuasistatic(Direction.kForward));
-        autonChooser.addOption("SysID Module Translation Quasi Backwards", swerve.sysIdQuasistatic(Direction.kReverse)); 
+        // autonChooser.addOption("SysID Module Translation Dynamic Forwards", swerve.sysIdDynamic(Direction.kForward));
+        // autonChooser.addOption("SysID Module Translation Dynamic Backwards", swerve.sysIdDynamic(Direction.kReverse));
+        // autonChooser.addOption("SysID Module Translation Quasi Forwards", swerve.sysIdQuasistatic(Direction.kForward));
+        // autonChooser.addOption("SysID Module Translation Quasi Backwards", swerve.sysIdQuasistatic(Direction.kReverse)); 
 
-        autonChooser.addOption("SysID Rotation Translation Dynamic Forwards", swerve.sysidRotationDynamic(Direction.kForward));
-        autonChooser.addOption("SysID Rotation Translation Dynamic Backwards", swerve.sysidRotationDynamic(Direction.kReverse));
-        autonChooser.addOption("SysID Rotation Translation Quasi Forwards", swerve.sysidRotationQuasiStatic(Direction.kForward));
-        autonChooser.addOption("SysID Rotation Translation Quasi Backwards", swerve.sysidRotationQuasiStatic(Direction.kReverse)); 
+        // autonChooser.addOption("SysID Rotation Translation Dynamic Forwards", swerve.sysidRotationDynamic(Direction.kForward));
+        // autonChooser.addOption("SysID Rotation Translation Dynamic Backwards", swerve.sysidRotationDynamic(Direction.kReverse));
+        // autonChooser.addOption("SysID Rotation Translation Quasi Forwards", swerve.sysidRotationQuasiStatic(Direction.kForward));
+        // autonChooser.addOption("SysID Rotation Translation Quasi Backwards", swerve.sysidRotationQuasiStatic(Direction.kReverse)); 
         
 
         // autonChooser.addOption("SysID Turret Dynamic Forwards", turret.getSysIdRoutine().dynamic(Direction.kForward));
@@ -335,20 +432,20 @@ public class RobotContainer {
         // autonChooser.addOption("SysID Intake Pivot Quasi Forwards", intakePivotSysId.quasistatic(Direction.kForward));
         // autonChooser.addOption("SysID Intake Pivot Quasi Backwards", intakePivotSysId.quasistatic(Direction.kReverse));
 
-        SysIdRoutine spindexerSysId = spindexer.getSysIdRoutine();
-        autonChooser.addOption("SysID Spindexer Dynamic Forwards", spindexerSysId.dynamic(Direction.kForward));
-        autonChooser.addOption("SysID Spindexer Dynamic Backwards", spindexerSysId.dynamic(Direction.kReverse));
-        autonChooser.addOption("SysID Spindexer Quasi Forwards", spindexerSysId.quasistatic(Direction.kForward));
-        autonChooser.addOption("SysID Spindexer Quasi Backwards", spindexerSysId.quasistatic(Direction.kReverse));
+        // SysIdRoutine spindexerSysId = spindexer.getSysIdRoutine();
+        // autonChooser.addOption("SysID Spindexer Dynamic Forwards", spindexerSysId.dynamic(Direction.kForward));
+        // autonChooser.addOption("SysID Spindexer Dynamic Backwards", spindexerSysId.dynamic(Direction.kReverse));
+        // autonChooser.addOption("SysID Spindexer Quasi Forwards", spindexerSysId.quasistatic(Direction.kForward));
+        // autonChooser.addOption("SysID Spindexer Quasi Backwards", spindexerSysId.quasistatic(Direction.kReverse));
 
-        // Wheel Radius Characterization
-        autonChooser.addOption("Wheel Characterization", new SwerveWheelRadiusCharacterization());
+        // // Wheel Radius Characterization
+        // autonChooser.addOption("Wheel Characterization", new SwerveWheelRadiusCharacterization());
 
-        SysIdRoutine handoffSysId = handoff.getSysIdRoutine();
-        autonChooser.addOption("SysID Handoff Dynamic Forward", handoffSysId.dynamic(Direction.kForward));
-        autonChooser.addOption("SysID Handoff Dynamic Backwards", handoffSysId.dynamic(Direction.kReverse));
-        autonChooser.addOption("SysID Handoff Quasi Forwards", handoffSysId.quasistatic(Direction.kForward));
-        autonChooser.addOption("SysID Handoff Quasi Backwards", handoffSysId.quasistatic(Direction.kReverse));
+        // SysIdRoutine handoffSysId = handoff.getSysIdRoutine();
+        // autonChooser.addOption("SysID Handoff Dynamic Forward", handoffSysId.dynamic(Direction.kForward));
+        // autonChooser.addOption("SysID Handoff Dynamic Backwards", handoffSysId.dynamic(Direction.kReverse));
+        // autonChooser.addOption("SysID Handoff Quasi Forwards", handoffSysId.quasistatic(Direction.kForward));
+        // autonChooser.addOption("SysID Handoff Quasi Backwards", handoffSysId.quasistatic(Direction.kReverse));
     }
 
     public Command getAutonomousCommand() {

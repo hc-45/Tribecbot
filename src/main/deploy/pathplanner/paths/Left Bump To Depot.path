@@ -3,47 +3,33 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.5921087786259545,
-        "y": 7.63337786259542
+        "x": 3.589750889679717,
+        "y": 5.9339976275207595
       },
       "prevControl": null,
       "nextControl": {
-        "x": 8.32379596678529,
-        "y": 7.569395017793594
+        "x": 3.8521567589767303,
+        "y": 5.92251805970181
       },
       "isLocked": false,
-      "linkedName": "Top Trench Score"
+      "linkedName": "Left Bump Start"
     },
     {
       "anchor": {
-        "x": 7.785836298932384,
-        "y": 4.4169513641755636
+        "x": 0.7278054567022547,
+        "y": 5.9339976275207595
       },
       "prevControl": {
-        "x": 7.763125401827354,
-        "y": 7.670407928336639
+        "x": 1.6779675215686134,
+        "y": 5.934033465612401
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "NZ Top Center"
+      "linkedName": "Depot Collect"
     }
   ],
   "rotationTargets": [],
-  "constraintZones": [
-    {
-      "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.7587511825922443,
-      "maxWaypointRelativePos": 1.0,
-      "constraints": {
-        "maxVelocity": 3.5,
-        "maxAcceleration": 6.75,
-        "maxAngularVelocity": 400.0,
-        "maxAngularAcceleration": 900.0,
-        "nominalVoltage": 12.0,
-        "unlimited": false
-      }
-    }
-  ],
+  "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
@@ -59,7 +45,7 @@
     "rotation": -90.0
   },
   "reversed": false,
-  "folder": "To NZ",
+  "folder": "Misc",
   "idealStartingState": {
     "velocity": 0,
     "rotation": -90.0

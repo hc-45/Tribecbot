@@ -8,27 +8,48 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.849786476868328,
-        "y": 7.956725978647688
+        "x": 6.161198102016607,
+        "y": 7.515599051008303
       },
       "isLocked": false,
-      "linkedName": "NZ Top Center (P)"
+      "linkedName": "NZ Left Center"
     },
     {
       "anchor": {
-        "x": 3.5921087786259545,
-        "y": 7.63337786259542
+        "x": 4.633392645314355,
+        "y": 7.655468564650059
       },
       "prevControl": {
-        "x": 6.623843416370107,
+        "x": 5.92449584816133,
         "y": 7.655468564650059
+      },
+      "nextControl": {
+        "x": 2.6733286409106265,
+        "y": 7.655468564650059
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 1.2227283511269282,
+        "y": 4.922633451957295
+      },
+      "prevControl": {
+        "x": 2.2018149466192183,
+        "y": 7.268137603795967
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Top Trench Score"
+      "linkedName": "Tower Left"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.2581143740340126,
+      "rotationDegrees": -90.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -38,16 +59,16 @@
     "maxAngularVelocity": 400.0,
     "maxAngularAcceleration": 900.0,
     "nominalVoltage": 12.0,
-    "unlimited": false
+    "unlimited": true
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -90.0
+    "rotation": 0.0
   },
   "reversed": false,
-  "folder": "To Score",
+  "folder": "To Tower",
   "idealStartingState": {
-    "velocity": 0,
+    "velocity": 5.75,
     "rotation": -90.0
   },
   "useDefaultConstraints": true

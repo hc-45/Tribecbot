@@ -1,4 +1,4 @@
-package com.stuypulse.robot.commands.auton.poaching;
+package com.stuypulse.robot.commands.auton.regular;
 
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.stuypulse.robot.commands.handoff.HandoffRun;
@@ -9,7 +9,6 @@ import com.stuypulse.robot.commands.spindexer.SpindexerRun;
 import com.stuypulse.robot.commands.spindexer.SpindexerStop;
 import com.stuypulse.robot.commands.superstructure.SuperstructureInterpolation;
 import com.stuypulse.robot.subsystems.superstructure.Superstructure;
-import com.stuypulse.robot.subsystems.spindexer.Spindexer;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -17,9 +16,9 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
-public class BottomOneCyclePoach extends SequentialCommandGroup {
+public class LeftOneCycle extends SequentialCommandGroup {
     
-    public BottomOneCyclePoach(PathPlannerPath... paths) {
+    public LeftOneCycle(PathPlannerPath... paths) {
 
         addCommands(
 
@@ -27,18 +26,16 @@ public class BottomOneCyclePoach extends SequentialCommandGroup {
             new IntakeDeploy().alongWith(
                 CommandSwerveDrivetrain.getInstance().followPathCommand(paths[0])
             ),
+            new SuperstructureInterpolation(),
 
             // Trip 1 To Score
-            CommandSwerveDrivetrain.getInstance().followPathCommand(paths[1]).alongWith(
-                new IntakeStow()
-            ),
+            CommandSwerveDrivetrain.getInstance().followPathCommand(paths[1]),
             new ParallelCommandGroup(
                 new WaitUntilCommand(() -> Superstructure.getInstance().atTolerance())
             ),
             new SpindexerRun().alongWith(
                 new HandoffRun()
             )
-
         );
 
     }

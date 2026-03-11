@@ -9,7 +9,6 @@ import com.stuypulse.robot.commands.spindexer.SpindexerRun;
 import com.stuypulse.robot.commands.spindexer.SpindexerStop;
 import com.stuypulse.robot.commands.superstructure.SuperstructureInterpolation;
 import com.stuypulse.robot.subsystems.superstructure.Superstructure;
-import com.stuypulse.robot.subsystems.spindexer.Spindexer;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -36,6 +35,14 @@ public class DepotAuton extends SequentialCommandGroup {
             new SpindexerRun().alongWith(
                 new HandoffRun()
             )
+            // .until(() -> DriverStation.getMatchTime() < 2).andThen(
+            //     new ParallelCommandGroup(
+            //         new HandoffStop(),
+            //         new SpindexerStop(),
+            //         new ClimberDown()
+            //     )
+            // )
+
         );
 
     }

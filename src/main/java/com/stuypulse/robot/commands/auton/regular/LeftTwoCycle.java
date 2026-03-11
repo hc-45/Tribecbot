@@ -9,7 +9,6 @@ import com.stuypulse.robot.commands.spindexer.SpindexerRun;
 import com.stuypulse.robot.commands.spindexer.SpindexerStop;
 import com.stuypulse.robot.commands.superstructure.SuperstructureInterpolation;
 import com.stuypulse.robot.subsystems.superstructure.Superstructure;
-import com.stuypulse.robot.subsystems.spindexer.Spindexer;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -17,9 +16,9 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
-public class BottomTwoCycle extends SequentialCommandGroup {
+public class LeftTwoCycle extends SequentialCommandGroup {
     
-    public BottomTwoCycle(PathPlannerPath... paths) {
+    public LeftTwoCycle(PathPlannerPath... paths) {
 
         addCommands(
 
@@ -27,36 +26,34 @@ public class BottomTwoCycle extends SequentialCommandGroup {
             new IntakeDeploy().alongWith(
                 CommandSwerveDrivetrain.getInstance().followPathCommand(paths[0])
             ),
+            new SuperstructureInterpolation(),
 
             // Trip 1 To Score
             CommandSwerveDrivetrain.getInstance().followPathCommand(paths[1]).alongWith(
                 new IntakeStow()
             ),
-            new WaitUntilCommand(() -> Superstructure.getInstance().atTolerance()),
+            new ParallelCommandGroup(
+                new WaitUntilCommand(() -> Superstructure.getInstance().isShooterAtTolerance()),
+                new WaitUntilCommand(() -> Superstructure.getInstance().isHoodAtTolerance())
+            ),
             new SpindexerRun().alongWith(
                 new HandoffRun()
             ).withTimeout(5.0),
 
             // NZ Trip 2
-            new IntakeDeploy().alongWith(
-                new ParallelCommandGroup(
-                    CommandSwerveDrivetrain.getInstance().followPathCommand(paths[2]),
-                    new HandoffStop(),
-                    new SpindexerStop()
-                )
+            new ParallelCommandGroup(
+                CommandSwerveDrivetrain.getInstance().followPathCommand(paths[2]),
+                new HandoffStop(),
+                new SpindexerStop()
             ),
 
-            // Trip 2 To Score
-            CommandSwerveDrivetrain.getInstance().followPathCommand(paths[3]).alongWith(
-                new IntakeStow()
-            ),
             new ParallelCommandGroup(
-                new WaitUntilCommand(() -> Superstructure.getInstance().atTolerance())
+                new WaitUntilCommand(() -> Superstructure.getInstance().isShooterAtTolerance()),
+                new WaitUntilCommand(() -> Superstructure.getInstance().isHoodAtTolerance())
             ),
             new SpindexerRun().alongWith(
                 new HandoffRun()
-            )
-
+            )  
         );
 
     }

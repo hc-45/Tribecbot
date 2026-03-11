@@ -3,54 +3,34 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.8073546856465015,
-        "y": 3.696085409252669
+        "x": 4.461245551601425,
+        "y": 0.5006049822064051
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.5485290628707,
-        "y": 0.4683274021352313
+        "x": 1.4104440475220295,
+        "y": 0.712825661260673
       },
       "isLocked": false,
-      "linkedName": "NZ Bottom Center"
+      "linkedName": "Right Trench Score"
     },
     {
       "anchor": {
-        "x": 4.579596678529064,
-        "y": 0.43604982206405685
-      },
-      "prevControl": {
-        "x": 6.558452312157588,
-        "y": 0.5020116765183412
-      },
-      "nextControl": {
-        "x": 2.965717674970344,
-        "y": 0.382253855278766
-      },
-      "isLocked": false,
-      "linkedName": null
-    },
-    {
-      "anchor": {
-        "x": 1.1258956109134053,
+        "x": 0.9645077105575333,
         "y": 2.5448517200474496
       },
       "prevControl": {
-        "x": 2.1695373665480435,
-        "y": 0.4037722419928822
+        "x": 1.373357058125742,
+        "y": 1.3183036773428227
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Tower Right 1"
+      "linkedName": "Tower Right"
     }
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 1.0510046367851622,
-      "rotationDegrees": 90.0
-    },
-    {
-      "waypointRelativePos": 1.3261205564142173,
+      "waypointRelativePos": 0.41536050156739895,
       "rotationDegrees": 90.0
     }
   ],
@@ -63,7 +43,7 @@
     "maxAngularVelocity": 400.0,
     "maxAngularAcceleration": 900.0,
     "nominalVoltage": 12.0,
-    "unlimited": false
+    "unlimited": true
   },
   "goalEndState": {
     "velocity": 0,
@@ -72,7 +52,7 @@
   "reversed": false,
   "folder": "To Tower",
   "idealStartingState": {
-    "velocity": 0,
+    "velocity": 0.0,
     "rotation": 90.0
   },
   "useDefaultConstraints": true

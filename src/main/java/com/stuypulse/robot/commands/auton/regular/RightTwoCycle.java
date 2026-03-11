@@ -1,4 +1,4 @@
-package com.stuypulse.robot.commands.auton.poaching;
+package com.stuypulse.robot.commands.auton.regular;
 
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.stuypulse.robot.commands.handoff.HandoffRun;
@@ -9,7 +9,6 @@ import com.stuypulse.robot.commands.spindexer.SpindexerRun;
 import com.stuypulse.robot.commands.spindexer.SpindexerStop;
 import com.stuypulse.robot.commands.superstructure.SuperstructureInterpolation;
 import com.stuypulse.robot.subsystems.superstructure.Superstructure;
-import com.stuypulse.robot.subsystems.spindexer.Spindexer;
 import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -17,9 +16,9 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
-public class TopTwoCyclePoach extends SequentialCommandGroup {
+public class RightTwoCycle extends SequentialCommandGroup {
     
-    public TopTwoCyclePoach(PathPlannerPath... paths) {
+    public RightTwoCycle(PathPlannerPath... paths) {
 
         addCommands(
 
@@ -27,6 +26,7 @@ public class TopTwoCyclePoach extends SequentialCommandGroup {
             new IntakeDeploy().alongWith(
                 CommandSwerveDrivetrain.getInstance().followPathCommand(paths[0])
             ),
+            new SuperstructureInterpolation(),
 
             // Trip 1 To Score
             CommandSwerveDrivetrain.getInstance().followPathCommand(paths[1]).alongWith(
@@ -38,24 +38,26 @@ public class TopTwoCyclePoach extends SequentialCommandGroup {
             ).withTimeout(5.0),
 
             // NZ Trip 2
-            new IntakeDeploy().alongWith(
-                new ParallelCommandGroup(
-                    CommandSwerveDrivetrain.getInstance().followPathCommand(paths[2]),
-                    new HandoffStop(),
-                    new SpindexerStop()
-                )
+            new ParallelCommandGroup(
+                CommandSwerveDrivetrain.getInstance().followPathCommand(paths[2]),
+                new HandoffStop(),
+                new SpindexerStop()
             ),
 
-            // Trip 2 To Score
-            CommandSwerveDrivetrain.getInstance().followPathCommand(paths[3]).alongWith(
-                new IntakeStow()
-            ),
             new ParallelCommandGroup(
                 new WaitUntilCommand(() -> Superstructure.getInstance().atTolerance())
             ),
             new SpindexerRun().alongWith(
                 new HandoffRun()
             )
+            // .until(() -> DriverStation.getMatchTime() < 2).andThen(
+            //     new ParallelCommandGroup(
+            //         new HandoffStop(),
+            //         new SpindexerStop(),
+            //         new ClimberDown()
+            //     )
+            // )
+
         );
 
     }

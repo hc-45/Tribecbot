@@ -3,32 +3,37 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 0.6632502965545264,
-        "y": 5.968082061068702
+        "x": 0.7278054567022547,
+        "y": 5.9339976275207595
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.4169988137603804,
-        "y": 6.020071174377224
+        "x": 3.869489916963227,
+        "y": 6.149181494661922
       },
       "isLocked": false,
       "linkedName": "Depot Collect"
     },
     {
       "anchor": {
-        "x": 1.1043772241992889,
-        "y": 4.933392645314354
+        "x": 1.2227283511269282,
+        "y": 4.922633451957295
       },
       "prevControl": {
-        "x": 2.051186239620404,
-        "y": 5.030225385527876
+        "x": 3.643546856465006,
+        "y": 4.83655990510083
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Tower Left 1"
+      "linkedName": "Tower Left"
     }
   ],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.06336939721792927,
+      "rotationDegrees": -90.0
+    }
+  ],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -48,7 +53,7 @@
   "folder": "Misc",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 180.0
+    "rotation": -90.0
   },
   "useDefaultConstraints": true
 }
