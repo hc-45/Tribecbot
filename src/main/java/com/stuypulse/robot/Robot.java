@@ -67,7 +67,6 @@ public class Robot extends TimedRobot {
     /******************/
     @Override
     public void simulationInit() {
-        Simulation.getInstance().configure();
     }
 
     @Override
