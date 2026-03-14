@@ -73,11 +73,12 @@ public abstract class Handoff extends SubsystemBase {
     public abstract void setVoltageOverride(Optional<Double> voltage);
     public abstract boolean isHandoffStalling();
 
+    public abstract double getCurrentDraw();
+
     @Override
     public void periodic() {
         super.periodic();
         SmartDashboard.putString("Handoff/State", getState().toString());
-        SmartDashboard.putString("States/Handoff", getState().toString());
 
         SmartDashboard.putNumber("Handoff/Target RPM", getTargetRPM());
         SmartDashboard.putNumber("Handoff/Current RPM", getCurrentRPM());

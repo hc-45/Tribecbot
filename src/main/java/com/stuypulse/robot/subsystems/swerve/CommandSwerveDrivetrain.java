@@ -29,9 +29,11 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
-import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Notifier;
-import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.FieldObject2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -40,7 +42,12 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
+import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -276,7 +283,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (EnabledSubsystems.SWERVE.get()) {
             super.setControl(request);
         }
-        else {
+    else {
             super.setControl(new SwerveRequest.Idle());
         }
     }
@@ -447,8 +454,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             .withRotationalRate(robotSpeeds.omegaRadiansPerSecond));
     }
 
-    
-
     public void drive(Vector2D velocity, double rotation) {
         ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(
             Robot.isBlue() ? velocity.y : -velocity.y, 
@@ -497,7 +502,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         
         return isUnderTrench;
     }
-    
 
     public boolean isInOpponentZone(){
         Translation2d turretTranslation = getTurretPose().getTranslation();
@@ -522,7 +526,53 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public boolean isOutsideAllianceZone() {
         return getPose().getX() > Field.AllianceRightTrench.rightEdge.getX() + Field.TRENCH_HOOD_TOLERANCE;
     }
-    
+
+    public void teleopInit() {
+        for(SwerveModule<TalonFX, TalonFX, CANcoder> module: getModules()) {
+            TalonFXConfiguration newConfigs = new TalonFXConfiguration();
+            module.getDriveMotor().getConfigurator().refresh(newConfigs);
+            newConfigs = newConfigs
+                    .withCurrentLimits(new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(80)
+                        .withStatorCurrentLimitEnable(true));
+                        
+            module.getDriveMotor().getConfigurator().apply(newConfigs);
+        }
+    }
+
+    public void autonInit() {
+        for(SwerveModule<TalonFX, TalonFX, CANcoder> module: getModules()) {
+            TalonFXConfiguration newConfigs = new TalonFXConfiguration();
+            module.getDriveMotor().getConfigurator().refresh(newConfigs);
+            newConfigs = newConfigs
+                    .withCurrentLimits(new CurrentLimitsConfigs()
+                        .withStatorCurrentLimit(120)
+                        .withStatorCurrentLimitEnable(true));
+                        
+            module.getDriveMotor().getConfigurator().apply(newConfigs);
+        }
+    }
+
+    public double getTotalDriveSupplyCurrent() {
+        double total = 0.0;
+
+        for(SwerveModule<TalonFX, TalonFX, CANcoder> module: getModules()) {
+            total += module.getDriveMotor().getSupplyCurrent().getValueAsDouble();
+        }
+
+        return total;
+    }
+
+    public double getTotalSteerSupplyCurrent() {
+        double total = 0.0;
+
+        for(SwerveModule<TalonFX, TalonFX, CANcoder> module: getModules()) {
+            total += module.getSteerMotor().getSupplyCurrent().getValueAsDouble();
+        }
+
+        return total;
+    }
+
     @Override
     public void periodic() {
         Pose2d pose = mapleSimSwerveDrivetrain != null ? mapleSimSwerveDrivetrain.mapleSimDrive.getSimulatedDriveTrainPose() : getPose(); // only use maplesim pose if simming
@@ -530,6 +580,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             pose.getTranslation().plus(Settings.Superstructure.Turret.TURRET_OFFSET.getTranslation().rotateBy(pose.getRotation())),
             pose.getRotation().plus(Turret.getInstance().getAngle())
         );
+
+        robotPose.set(getPose());
 
         turret2d.setPose(Robot.isBlue() ? turretPose : Field.transformToOppositeAlliance(turretPose));
 
@@ -564,6 +616,23 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             }
         }
 
+        // CAN SIGNAL LOGGING
+        SmartDashboard.putBoolean("Robot/CAN/Main/Front Left Drive Motor Connected? (ID " + String.valueOf(TunerConstants.kFrontLeftDriveMotorId) + ")", getModule(0).getDriveMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Front Left Steer Motor Connected? (ID " + String.valueOf(TunerConstants.kFrontLeftSteerMotorId) + ")", getModule(0).getSteerMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Front Left CANcoder Connected? (ID " + String.valueOf(TunerConstants.kFrontLeftEncoderId) + ")", getModule(0).getEncoder().isConnected());
+        
+        SmartDashboard.putBoolean("Robot/CAN/Main/Front Right Drive Motor Connected? (ID " + String.valueOf(TunerConstants.kFrontRightDriveMotorId) + ")", getModule(1).getDriveMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Front Right Steer Motor Connected? (ID " + String.valueOf(TunerConstants.kFrontRightSteerMotorId) + ")", getModule(1).getSteerMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Front Right CANcoder Connected? (ID " + String.valueOf(TunerConstants.kFrontRightEncoderId) + ")", getModule(1).getEncoder().isConnected());
+        
+        SmartDashboard.putBoolean("Robot/CAN/Main/Back Left Drive Motor Connected? (ID " + String.valueOf(TunerConstants.kBackLeftDriveMotorId) + ")", getModule(2).getDriveMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Back Left Steer Motor Connected? (ID " + String.valueOf(TunerConstants.kBackLeftSteerMotorId) + ")", getModule(2).getSteerMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Back Left CANcoder Connected? (ID " + String.valueOf(TunerConstants.kBackLeftEncoderId) + ")", getModule(2).getEncoder().isConnected());
+        
+        SmartDashboard.putBoolean("Robot/CAN/Main/Back Right Drive Motor Connected? (ID " + String.valueOf(TunerConstants.kBackRightDriveMotorId) + ")", getModule(3).getDriveMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Back Right Steer Motor Connected? (ID " + String.valueOf(TunerConstants.kBackRightSteerMotorId) + ")", getModule(3).getSteerMotor().isConnected());
+        SmartDashboard.putBoolean("Robot/CAN/Main/Back Right CANcoder Connected? (ID " + String.valueOf(TunerConstants.kBackRightEncoderId) + ")", getModule(3).getEncoder().isConnected());
+        
         Field.FIELD2D.getRobotObject().setPose(Robot.isBlue() ? pose : Field.transformToOppositeAlliance(pose));
         
         if (Settings.DEBUG_MODE) {}

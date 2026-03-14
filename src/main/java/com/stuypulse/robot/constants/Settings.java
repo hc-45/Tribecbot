@@ -5,6 +5,8 @@
 /***************************************************************/
 package com.stuypulse.robot.constants;
 
+import com.ctre.phoenix6.CANBus;
+import com.pathplanner.lib.path.PathConstraints;
 import com.stuypulse.stuylib.network.SmartBoolean;
 import com.stuypulse.stuylib.network.SmartNumber;
 
@@ -13,11 +15,9 @@ import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-
-import com.ctre.phoenix6.CANBus;
-import com.pathplanner.lib.path.PathConstraints;
 
 /*-
  * File containing constants and tunable settings for every subsystem on the robot.
@@ -74,6 +74,7 @@ public interface Settings {
         double STOP_SPEED = 0.0;
 
         double RPM_TOLERANCE = 800.0;
+        double TOLERANCE_TO_START_INTAKE_ROLLERS_DURING_SCORING_ROUTINE = 1500.0;
         double STALL_CURRENT_LIMIT = 40.0; // random number as of 3/9
 
 
@@ -83,9 +84,10 @@ public interface Settings {
     
     public interface Superstructure {
         public final double SHOOTER_TOLERANCE_RPM = 100.0;
-        public final Rotation2d HOOD_TOLERANCE = Rotation2d.fromDegrees(0.5);
+        public final Rotation2d HOOD_TOLERANCE = Rotation2d.fromDegrees(0.2);
 
         public final double SHOOTER_SOTM_TOLERANCE_RPM = 350.0;
+        public final double SHOOTER_FOTM_TOLERANCE_RPM = 250.0;
         public final Rotation2d HOOD_SOTM_TOLERANCE = Rotation2d.fromDegrees(3.0);
 
         public interface AngleInterpolation {
@@ -100,10 +102,10 @@ public interface Settings {
 
         public interface RPMInterpolation{
             double[][] distanceRPMInterpolationValues = {
-                {1.22, 2700.0},                                         //BLAY-APPROVED, LOCKED IN
-                {2.15, 2930.0},                                         //BLAY-APPROVED
+                {1.22, 2670.0},                                         //BLAY-APPROVED, LOCKED IN
+                {2.15, 2880.0},                                         //BLAY-APPROVED
                 {3.38, 3200},                                           //BLAY-APPROVED
-                {4.43, 3550.0},                                         //BLAY-APPROVED
+                {4.43, 3500.0},                                         //BLAY-APPROVED
                 {5.66, 3900.0}                                          //KEVIN-APPROVED
             };
         }
@@ -125,12 +127,12 @@ public interface Settings {
                 {7.87, 4000.0},
                 {9.77, 4500.0},
                 {10.694, 4795.0},       //STARTING FROM HERE THE DATA IS UNRELIABLE!!!
-                {11.516, 5000.0},
-                {12.416, 5295.0},
-                {13.316, 5500.0},
-                {14.216, 5795.0},
-                {15.148, 6000.0},
-                {16.54, 6300}           //FIELD LENGTH
+                {11.516, 4950.0},
+                {12.416, 5100.0},
+                {13.316, 5250.0},
+                {14.216, 5375.0},
+                {15.148, 5400.0},
+                {16.54, 5500}           //FIELD LENGTH
             };
         }
 
@@ -182,7 +184,7 @@ public interface Settings {
 
             public final Rotation2d ENCODER_OFFSET = Rotation2d.fromRotations(0.795);
 
-            public final Rotation2d FORWARD_SOFT_LIMIT = Rotation2d.fromDegrees(39.0);
+            public final Rotation2d FORWARD_SOFT_LIMIT = Rotation2d.fromDegrees(40.0);
             public final Rotation2d REVERSE_SOFT_LIMIT = Rotation2d.fromDegrees(20.0);
             public final Rotation2d MIN_FROM_HORIZON = Rotation2d.fromDegrees(7.0);
             public final Rotation2d MAX_FROM_HORIZON = Rotation2d.fromDegrees(40.0);
@@ -196,7 +198,7 @@ public interface Settings {
 
                 public final SmartNumber SHOOT = new SmartNumber("InterpolationTesting/Shoot State Target Angle (deg)", 20.0);
                 public final SmartNumber FERRY = new SmartNumber("InterpolationTesting/Ferry State Target Angle (deg)", 20.0);
-
+                public final Rotation2d FERRY_ANGLE = Rotation2d.fromDegrees(40.0);
                 public final Rotation2d MIN = Rotation2d.fromDegrees(20.0);
                 public final Rotation2d MAX = Rotation2d.fromDegrees(40.0);
 
@@ -256,7 +258,7 @@ public interface Settings {
         public interface SOTM {
             public final int MAX_ITERATIONS = 10;
             double TIME_TOLERANCE = 1e-5;
-            SmartNumber UPDATE_DELAY = new SmartNumber("Superstructure/SOTM/update delay", 0.23);
+            SmartNumber UPDATE_DELAY = new SmartNumber("Superstructure/SOTM/update delay", 0.15);
         }
     }
     
@@ -267,16 +269,16 @@ public interface Settings {
 
         public interface Constraints {
             public final double MAX_VELOCITY_M_PER_S = 4.93; 
-            public final double MAX_VELOCITY_SOTM_M_PER_S = 1.00;
-            public final double MAX_VELOCITY_FOTM_M_PER_S = 2.00;
+            public final double MAX_VELOCITY_SOTM_M_PER_S = 1.5;
+            public final double MAX_VELOCITY_FOTM_M_PER_S = 3.00;
 
             public final double MAX_ANGULAR_VEL_RAD_PER_S = Units.degreesToRadians(300.0);
             public final double MAX_ANGULAR_VEL_SOTM_RAD_PER_S = Units.degreesToRadians(75.0);
             public final double MAX_ANGULAR_VEL_FOTM_RAD_PER_S = Units.degreesToRadians(150.0);
 
             public final double MAX_ACCEL_M_PER_S_SQUARED = 15.0;
-            public final double MAX_ACCEL_M_PER_S_SQUARED_SOTM = 15.0;
-            public final double MAX_ACCEL_M_PER_S_SQUARED_FOTM = 15.0;
+            public final double MAX_ACCEL_M_PER_S_SQUARED_SOTM = 4.0;
+            public final double MAX_ACCEL_M_PER_S_SQUARED_FOTM = 10.0;
             public final double MAX_ANGULAR_ACCEL_RAD_PER_S_SQUARED = Units.degreesToRadians(900.0);
 
             public final PathConstraints DEFAULT_CONSTRAINTS =
@@ -313,5 +315,10 @@ public interface Settings {
         public final Vector<N3> MT2_STDEVS = VecBuilder.fill(0.7, 0.7, 694694.0);
         public final int RESET_IMU_INDEX = 1;
         public final int INTERNAL_EXTERNAL_ASSIST_INDEX = 4;
+        public final Translation2d INVALID_POSITION = new Translation2d(8.2705, 4.0345);
+        public final double INVALID_POSITION_TOLERANCE_M = 0.05;
+        public final double MAX_ANGULAR_VELOCITY_RAD_SEC = 2 * Math.PI;
+
+        public final double BUZZ_DEBOUNCE = 0.25;
     }
 }

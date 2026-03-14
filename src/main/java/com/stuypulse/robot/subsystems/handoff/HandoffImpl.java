@@ -13,6 +13,10 @@ import com.stuypulse.robot.constants.Gains;
 import com.stuypulse.robot.constants.Motors;
 import com.stuypulse.robot.constants.Ports;
 import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.subsystems.spindexer.Spindexer.SpindexerState;
+import com.stuypulse.robot.subsystems.superstructure.Superstructure;
+import com.stuypulse.robot.subsystems.superstructure.Superstructure.SuperstructureState;
+import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.util.SysId;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -65,6 +69,14 @@ public class HandoffImpl extends Handoff {
     public double getCurrentRPM() {
         return motor.getVelocity().getValueAsDouble() * Settings.SECONDS_IN_A_MINUTE * Settings.Handoff.GEAR_RATIO;
     }
+
+    public boolean shouldStop() {
+        boolean isStopState = getState() == HandoffState.STOP;
+        boolean isTurretWrapping = Superstructure.getInstance().isTurretWrapping();
+        boolean isBehindHubWhileFerrying = Superstructure.getInstance().getState() == SuperstructureState.FOTM && CommandSwerveDrivetrain.getInstance().isBehindHub();
+
+        return isStopState || isTurretWrapping || isBehindHubWhileFerrying;
+    }
     
     @Override
     public void periodic() {
@@ -73,25 +85,23 @@ public class HandoffImpl extends Handoff {
         if (EnabledSubsystems.HANDOFF.get() && getState() != HandoffState.STOP) {
             if (voltageOverride.isPresent()) {
                 motor.setVoltage(voltageOverride.get());
-            } 
-            // else if (isHandoffStalling()) { //TODO: debug logic
-            //     setState(HandoffState.REVERSE);
-            //     motor.setControl(controller.withVelocity(getTargetRPM() / 60.0).withEnableFOC(true));
-
-            // }
-              else {
+            } else if (shouldStop()) {
+                motor.stopMotor();
+            } else {
                 motor.setControl(controller.withVelocity(getTargetRPM() / Settings.SECONDS_IN_A_MINUTE));
             }
         } else {
             motor.stopMotor();
         }
         
+        SmartDashboard.putBoolean("Robot/CAN/Main/Handoff Motor Connected? (ID " + String.valueOf(motor.getDeviceID()) + ")", motor.isConnected());
+        
+        SmartDashboard.putNumber("Handoff/Voltage", motor.getMotorVoltage().getValueAsDouble());
+        SmartDashboard.putNumber("Handoff/Supply Current", motor.getSupplyCurrent().getValueAsDouble());
+        SmartDashboard.putNumber("Handoff/Stator Current", motor.getStatorCurrent().getValueAsDouble());
+
         if (Settings.DEBUG_MODE) {
-            SmartDashboard.putNumber("Handoff/Voltage", motor.getMotorVoltage().getValueAsDouble());
-            SmartDashboard.putNumber("Handoff/Supply Current", motor.getSupplyCurrent().getValueAsDouble());
-            SmartDashboard.putNumber("Handoff/Stator Current", motor.getStatorCurrent().getValueAsDouble());
-            
-            SmartDashboard.putNumber("Current Draws/Handoff (amps)", motor.getSupplyCurrent().getValueAsDouble());
+
         }
     }
     
@@ -111,5 +121,10 @@ public class HandoffImpl extends Handoff {
             () -> motor.getVelocity().getValueAsDouble(),
             () -> motor.getMotorVoltage().getValueAsDouble(),
             getInstance());
+    }
+    
+    @Override
+    public double getCurrentDraw(){
+        return motor.getSupplyCurrent().getValueAsDouble();
     }
 }

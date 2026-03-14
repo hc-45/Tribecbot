@@ -185,4 +185,9 @@ public class TurretSim extends Turret {
                 () -> sim.getInput(0),
                 getInstance());
     }
+
+    @Override
+    public double getCurrentDraw() {
+        return 0;
+    }
 }

@@ -126,6 +126,10 @@ public class Superstructure extends SubsystemBase {
         return turret.isWrapping();
     }
 
+    public double getCurrentDraw() {
+        return turret.getCurrentDraw() + shooter.getCurrentDraw() + hood.getCurrentDraw();
+    }
+
     @Override
     public void periodic() {
         SuperstructureState state = getState();
@@ -140,7 +144,6 @@ public class Superstructure extends SubsystemBase {
         }
 
         SmartDashboard.putString("Superstructure/State", state.name());
-        SmartDashboard.putString("States/SuperStructure", state.name());
 
         SmartDashboard.putBoolean("Superstructure/Shooter At Tolerance?", isShooterAtTolerance());
         SmartDashboard.putBoolean("Superstructure/Hood At Tolerance?", isHoodAtTolerance());

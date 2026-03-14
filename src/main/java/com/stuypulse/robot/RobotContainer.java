@@ -5,11 +5,7 @@
 /***************************************************************/
 package com.stuypulse.robot;
 
-import org.ironmaple.simulation.SimulatedArena;
-import com.stuypulse.stuylib.input.Gamepad;
-import com.stuypulse.stuylib.input.gamepads.AutoGamepad;
-import com.stuypulse.stuylib.network.SmartBoolean;
-
+import com.stuypulse.robot.commands.BuzzController;
 import com.stuypulse.robot.commands.auton.DoNothingAuton;
 import com.stuypulse.robot.commands.auton.regular.DepotAuton;
 import com.stuypulse.robot.commands.auton.regular.LeftTwoCycle;
@@ -23,7 +19,6 @@ import com.stuypulse.robot.commands.intake.IntakeOuttake;
 import com.stuypulse.robot.commands.intake.IntakeRunRollers;
 import com.stuypulse.robot.commands.intake.IntakeSetState;
 import com.stuypulse.robot.commands.intake.IntakeStopRollers;
-import com.stuypulse.robot.commands.intake.IntakeStow;
 import com.stuypulse.robot.commands.intake.ZeroPivotDeployed;
 import com.stuypulse.robot.commands.intake.ZeroPivotStowed;
 import com.stuypulse.robot.commands.spindexer.SpindexerReverse;
@@ -43,9 +38,14 @@ import com.stuypulse.robot.commands.swerve.SwerveResetHeading;
 import com.stuypulse.robot.commands.swerve.SwerveXMode;
 import com.stuypulse.robot.commands.turret.SeedTurret;
 import com.stuypulse.robot.commands.turret.ZeroTurret;
+import com.stuypulse.robot.commands.vision.EnableBackLimelight;
+import com.stuypulse.robot.commands.vision.EnableLeftLimelight;
+import com.stuypulse.robot.commands.vision.EnableRightLimelight;
 import com.stuypulse.robot.commands.vision.ResetLimelightIMU;
 import com.stuypulse.robot.commands.vision.SetIMUMode;
 import com.stuypulse.robot.commands.vision.SetMegaTagMode;
+import com.stuypulse.robot.commands.vision.WhitelistAllTags;
+import com.stuypulse.robot.commands.vision.WhitelistOutpostTags;
 import com.stuypulse.robot.constants.Field;
 import com.stuypulse.robot.constants.Ports;
 import com.stuypulse.robot.subsystems.handoff.Handoff;
@@ -63,12 +63,16 @@ import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
 import com.stuypulse.robot.subsystems.vision.LimelightVision;
 import com.stuypulse.robot.subsystems.vision.LimelightVision.MegaTagMode;
 import com.stuypulse.robot.util.PathUtil.AutonConfig;
+import com.stuypulse.stuylib.input.Gamepad;
+import com.stuypulse.stuylib.input.gamepads.AutoGamepad;
+import com.stuypulse.stuylib.network.SmartBoolean;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 
@@ -113,8 +117,24 @@ public class RobotContainer {
         configureButtonBindings();
         configureAutons();
         configureSysids();
-            
+        configureElasticButtons();
+
         SmartDashboard.putData("Field", Field.FIELD2D);
+    }
+
+    /****************/
+    /*** DEFAULTS ***/
+    /****************/
+
+    private void configureDefaultCommands() {
+        swerve.setDefaultCommand(new SwerveDriveDrive(driver));
+    }
+
+    /***************/
+    /*** ELASTIC ***/
+    /***************/
+
+    private void configureElasticButtons() {
         SmartDashboard.putData("Robot/Zero Pivot Encoder at Lower Limit (Deployed)", new ZeroPivotDeployed().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Pivot Encoder at Upper Limit (Stowed)", new ZeroPivotStowed().ignoringDisable(true));
         SmartDashboard.putData("Robot/Zero Turret Encoders", new ZeroTurret().ignoringDisable(true));
@@ -122,6 +142,14 @@ public class RobotContainer {
         SmartDashboard.putData("Robot/Seed Hood Relative Encoder At Upper Hardstop", new SeedHoodRelativeEncoderAtUpperHardstop().ignoringDisable(true));
         SmartDashboard.putData("Robot/Set Megatag 1", new SetMegaTagMode(MegaTagMode.MEGATAG1).ignoringDisable(true));
         SmartDashboard.putData("Robot/Set Megatag 2", new SetMegaTagMode(MegaTagMode.MEGATAG2).ignoringDisable(true));
+
+        SmartDashboard.putData("Robot/Set Left LL PF", new EnableLeftLimelight());
+        SmartDashboard.putData("Robot/Set Right LL PF", new EnableRightLimelight());
+        SmartDashboard.putData("Robot/Set Back LL PF", new EnableBackLimelight());
+
+        SmartDashboard.putData("Robot/Whitelist Outpost Tags", new WhitelistOutpostTags("limelight-left"));
+        SmartDashboard.putData("Robot/Whitelist All Tags", new WhitelistAllTags("limelight-left"));
+        // SmartDashboard.putData("Robot/Whitelist Trench Tags", new WhitelistOutpostTags("limelight-left"));
 
         SmartDashboard.putData("Robot/Handoff Reverse", 
             new ConditionalCommand(
@@ -137,14 +165,6 @@ public class RobotContainer {
                 new SpindexerReverse().andThen(new WaitCommand(1).andThen(new SpindexerStop())),
                 () -> spindexer.getState() == SpindexerState.FORWARD));
     }
-    
-    /****************/
-    /*** DEFAULTS ***/
-    /****************/
-
-    private void configureDefaultCommands() {
-        swerve.setDefaultCommand(new SwerveDriveDrive(driver));
-    }
 
     /***************/
     /*** BUTTONS ***/
@@ -154,7 +174,8 @@ public class RobotContainer {
         // Scoring Routine 
         driver.getTopButton()
             .whileTrue(new SwerveXMode())
-            .onTrue(new IntakeRunRollers())
+            .whileTrue(new RepeatCommand(new BuzzController(driver).onlyWhile(() -> !vision.hasData())))
+            .onTrue(new WaitUntilCommand(() -> spindexer.canStartIntakeRollers()).andThen(new IntakeRunRollers()))
             .whileTrue(new SuperstructureInterpolation()
                     .alongWith(new WaitUntilCommand(() -> superstructure.getState() == SuperstructureState.INTERPOLATION && superstructure.atTolerance()))
                         .andThen(new HandoffRun())
@@ -165,15 +186,15 @@ public class RobotContainer {
                     .alongWith(new HandoffStop()));
 
         // Intake Stow
-        driver.getLeftTriggerButton()
-            .onTrue(new IntakeStow());
+        // driver.getLeftTriggerButton()
+        //     .onTrue(new IntakeStow());
 
         // Intake Deploy
         driver.getRightTriggerButton()
-            .onTrue(new IntakeDeploy())
-            .onTrue(new SuperstructureStow()                    
-                    .alongWith(new SpindexerStop()) //TODO: test this logic
-                    .alongWith(new HandoffStop())); // TURNS OFF SOTM
+            .onTrue(new IntakeDeploy());
+            // .onTrue(new SuperstructureStow()                    
+            //         .alongWith(new SpindexerStop()) //TODO: test this logic
+            //         .alongWith(new HandoffStop())); // TURNS OFF SOTM
         
         // Reset Heading
         driver.getDPadUp()
@@ -190,7 +211,10 @@ public class RobotContainer {
             .onFalse(new IntakeRunRollers());
 
         // Ferrying In Place
-        // driver.getDPadRight()
+        driver.getDPadRight()
+            .onTrue(new SuperstructureStow()
+                .alongWith(new HandoffStop())
+                .alongWith(new SpindexerStop()));
         //     .whileTrue(new SwerveXMode())
         //     .onTrue(new IntakeRunRollers())
         //     .whileTrue(new SuperstructureInterpolation() // CURRENTLY, THIS PROVES THE FERRYING STATE IS BLOCKING SPINDEXER AND HANDOFF SOMEWHERE IN THE CODE
@@ -204,6 +228,7 @@ public class RobotContainer {
         
         // SOTM
         driver.getRightMenuButton()
+            .whileTrue(new RepeatCommand(new BuzzController(driver).onlyWhile(() -> !vision.hasData())))
             .onTrue(new IntakeRunRollers())
             .onTrue(new ConditionalCommand(
                 new ParallelCommandGroup(
@@ -367,5 +392,16 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return autonChooser.getSelected();
+    }
+
+    public void periodic() {
+        double totalCurrentDraw =   handoff.getCurrentDraw() +
+                                    intake.getCurrentDraw() +
+                                    spindexer.getCurrentDraw() +
+                                    superstructure.getCurrentDraw() +
+                                    swerve.getTotalDriveSupplyCurrent() +
+                                    swerve.getTotalSteerSupplyCurrent();
+                                    
+        SmartDashboard.putNumber("Robot/Total Current Draw", totalCurrentDraw);
     }
 }

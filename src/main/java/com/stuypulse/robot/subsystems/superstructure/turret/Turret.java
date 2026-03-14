@@ -90,17 +90,22 @@ public abstract class Turret extends SubsystemBase {
     }
 
     public Rotation2d getScoringAngle() {
+        CommandSwerveDrivetrain swerve = CommandSwerveDrivetrain.getInstance();
+
         Translation2d target = Field.getHubPose().getTranslation();
-        Translation2d turret = CommandSwerveDrivetrain.getInstance().getTurretPose().getTranslation();
-        return TurretAngleCalculator.getPointAtTargetAngle(target, turret);
+        Translation2d turret = swerve.getTurretPose().getTranslation();
+
+        return TurretAngleCalculator.getPointAtTargetAngle(target, turret, swerve.getPose().getRotation());
     }
 
     public Rotation2d getFerryAngle() {
-        Pose2d robot = CommandSwerveDrivetrain.getInstance().getPose();
-        Translation2d target = Field.getFerryZonePose(robot.getTranslation()).getTranslation();
-        Translation2d turret = CommandSwerveDrivetrain.getInstance().getTurretPose().getTranslation();
+        CommandSwerveDrivetrain swerve = CommandSwerveDrivetrain.getInstance();
 
-        return TurretAngleCalculator.getPointAtTargetAngle(target, turret);
+        Pose2d robot = swerve.getPose();
+        Translation2d target = Field.getFerryZonePose(robot.getTranslation()).getTranslation();
+        Translation2d turret = swerve.getTurretPose().getTranslation();
+
+        return TurretAngleCalculator.getPointAtTargetAngle(target, turret, robot.getRotation());
     }
 
     public abstract Rotation2d getAngle();
@@ -111,7 +116,8 @@ public abstract class Turret extends SubsystemBase {
     public abstract void zeroEncoders();
 
     public abstract boolean isWrapping();
-   
+    public abstract double getCurrentDraw();
+
     public void setState(TurretState state) {
         this.state = state;
     }
@@ -123,7 +129,6 @@ public abstract class Turret extends SubsystemBase {
     @Override
     public void periodic() {
         SmartDashboard.putString("Superstructure/Turret/State", state.name());
-        SmartDashboard.putString("States/Turret", state.name());
         
         SmartDashboard.putNumber("Superstructure/Turret/Target Angle", getTargetAngle().getDegrees());
         SmartDashboard.putNumber("Superstructure/Turret/Current Angle", getAngle().getDegrees());

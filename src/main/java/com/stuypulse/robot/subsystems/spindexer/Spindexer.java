@@ -51,14 +51,18 @@ public abstract class Spindexer extends SubsystemBase {
         this.spindexerState = state;
     }
 
+    public abstract boolean atTolerance();
+    public abstract boolean canStartIntakeRollers();
+
     public abstract SysIdRoutine getSysIdRoutine();
     public abstract void setVoltageOverride(Optional<Double> voltage);
+    
+    public abstract double getCurrentDraw();
 
     @Override
     public void periodic() {
         if (Settings.DEBUG_MODE) {
             SmartDashboard.putString("Spindexer/State", getState().name());
-            SmartDashboard.putString("States/Spindexer", getState().name());
 
             SmartDashboard.putNumber("Spindexer/Target RPM", getTargetRPM());
         }

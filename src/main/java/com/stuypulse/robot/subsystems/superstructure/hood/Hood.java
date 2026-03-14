@@ -70,14 +70,10 @@ public abstract class Hood extends SubsystemBase{
         if (CommandSwerveDrivetrain.getInstance().isUnderTrench()) {
             return Settings.Superstructure.Hood.Angles.STOW;
         }
-        
-        if(Settings.Superstructure.Hood.Angles.OVERRIDEN.get()) {
-            return Rotation2d.fromDegrees(Settings.Superstructure.Hood.Angles.OVERRIDE_VALUE_DEG.get());
-        }
 
         return switch(state) {
             case STOW -> Settings.Superstructure.Hood.Angles.STOW;
-            case FERRY -> Rotation2d.fromDegrees(39);
+            case FERRY -> Settings.Superstructure.Hood.Angles.FERRY_ANGLE;
             case SHOOT -> Rotation2d.fromDegrees(Settings.Superstructure.Hood.Angles.SHOOT.get());
             case KB -> Settings.Superstructure.Hood.Angles.KB;
             case LEFT_CORNER -> Settings.Superstructure.Hood.Angles.LEFT_CORNER;
@@ -127,14 +123,14 @@ public abstract class Hood extends SubsystemBase{
     public abstract void seedHoodAtUpperHardStop();
     public abstract void zeroHoodEncodersAfterSeed();
     
+    public abstract double getCurrentDraw();
 
     @Override
     public void periodic() {
         SmartDashboard.putString("Superstructure/Hood/State", state.name());
-        SmartDashboard.putString("States/Hood", state.name());
 
-        SmartDashboard.putNumber("Superstructure/Hood/Target Angle", getTargetAngle().getDegrees());
-        SmartDashboard.putNumber("Superstructure/Hood/Current Angle", getAngle().getDegrees());
+        SmartDashboard.putNumber("Superstructure/Hood/Target Angle (deg)", getTargetAngle().getDegrees());
+        SmartDashboard.putNumber("Superstructure/Hood/Current Angle (deg)", getAngle().getDegrees());
 
         if (Settings.DEBUG_MODE) {
             if (EnabledSubsystems.HOOD.get()) {

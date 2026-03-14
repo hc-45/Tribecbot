@@ -14,12 +14,12 @@ public interface DriverConstants {
         public interface Drive {
             double DEADBAND = 0.05;
             double RC = 0.05; 
-            int POWER = 3;
+            int POWER = 2;
         }
         public interface Turn {
             double DEADBAND = 0.05;
             double RC = 0.05;
-            int POWER = 3;
+            int POWER = 2;
         }
     }
 }

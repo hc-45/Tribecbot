@@ -236,4 +236,9 @@ public class IntakeSim extends Intake {
     public boolean isFuelInsideIntake() {
         return intakeSimulation.getGamePiecesAmount() != 0; // True if there is a game piece in the intake
     }
+
+    @Override
+    public double getCurrentDraw() {
+        return 0;
+    }
 }

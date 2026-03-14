@@ -57,9 +57,9 @@ public abstract class Shooter extends SubsystemBase {
     }
     
     public double getTargetRPM() {
-        if(Settings.Superstructure.Shooter.RPM.OVERRIDEN.get()) {
-            return Settings.Superstructure.Shooter.RPM.OVERRIDE_VALUE.get();
-        }
+        // if(Settings.Superstructure.Shooter.RPM.OVERRIDEN.get()) {
+        //     return Settings.Superstructure.Shooter.RPM.OVERRIDE_VALUE.get();
+        // }
         
         return switch(state) {
             case STOP -> 0;
@@ -82,8 +82,10 @@ public abstract class Shooter extends SubsystemBase {
     public boolean atTolerance() {
         double error = Math.abs(getTargetRPM() - getRPM());
 
-        if (state == ShooterState.SOTM || state == ShooterState.FOTM) {
+        if (state == ShooterState.SOTM) {
             return error < Settings.Superstructure.SHOOTER_SOTM_TOLERANCE_RPM;
+        } else if (state == ShooterState.FOTM) {
+            return error < Settings.Superstructure.SHOOTER_FOTM_TOLERANCE_RPM;
         } else {
             return error < Settings.Superstructure.SHOOTER_TOLERANCE_RPM;
         }
@@ -92,13 +94,14 @@ public abstract class Shooter extends SubsystemBase {
     public abstract double getRPM();
 
     public abstract SysIdRoutine getShooterSysIdRoutine();
+    
+    public abstract double getCurrentDraw();
 
     @Override
     public void periodic() {
         SmartDashboard.putString("Superstructure/Shooter/State", state.name());
-        SmartDashboard.putString("States/Shooter", state.name());
 
-        SmartDashboard.putNumber("Superstructure/Shooter/Current RPM", getRPM());
+        SmartDashboard.putNumber("Superstructure/Shooter/Current RPM (Leader)", getRPM());
         SmartDashboard.putNumber("Superstructure/Shooter/Target RPM", getTargetRPM());
     }
 }
