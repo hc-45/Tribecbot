@@ -79,12 +79,12 @@
               },
               "controllerUUID": "39nv7qw39guqelsnb2bbsmc5xxa8t6iq",
               "renderer": {
-                "cameraIndex": -2,
+                "cameraIndex": -1,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  -1.2882850305397804,
-                  1.2449561819633397,
-                  -1.0996702463792511
+                  1.4695761589768238e-15,
+                  5.999999999999999,
+                  -12
                 ],
                 "cameraTarget": [
                   0,
@@ -93,6 +93,31 @@
                 ]
               },
               "controlsHeight": 0
+            },
+            {
+              "type": 9,
+              "title": "Swerve",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "states",
+                    "logKey": "NT:AdvScope/SwerveStates",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  }
+                ],
+                "maxSpeed": 5,
+                "sizeX": 0.65,
+                "sizeY": 0.65,
+                "orientation": 1
+              },
+              "controllerUUID": "0c8xqcq8vmy3zd7fj149oain1a8t6g87",
+              "renderer": null,
+              "controlsHeight": 200
             }
           ]
         }

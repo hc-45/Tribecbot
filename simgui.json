@@ -4,64 +4,20 @@
       "/FMSInfo": "FMSInfo",
       "/SmartDashboard/Autonomous": "String Chooser",
       "/SmartDashboard/Field": "Field2d",
-      "/SmartDashboard/Handoff Reverse": "Command",
-      "/SmartDashboard/Intake Reverse": "Command",
       "/SmartDashboard/PathPlanner": "Alerts",
       "/SmartDashboard/Robot/Handoff Reverse": "Command",
       "/SmartDashboard/Robot/Intake Reverse": "Command",
-      "/SmartDashboard/Robot/Ryan Testing Seed Hood Encoder (NEW)": "Command",
       "/SmartDashboard/Robot/Seed Hood Relative Encoder At Upper Hardstop": "Command",
       "/SmartDashboard/Robot/Seed Turret": "Command",
       "/SmartDashboard/Robot/Set Megatag 1": "Command",
       "/SmartDashboard/Robot/Set Megatag 2": "Command",
       "/SmartDashboard/Robot/Spindexer Reverse": "Command",
-      "/SmartDashboard/Robot/Zero Hood Encoder": "Command",
       "/SmartDashboard/Robot/Zero Pivot Encoder at Lower Limit (Deployed)": "Command",
       "/SmartDashboard/Robot/Zero Pivot Encoder at Upper Limit (Stowed)": "Command",
       "/SmartDashboard/Robot/Zero Turret Encoders": "Command",
       "/SmartDashboard/Scheduler": "Scheduler",
-      "/SmartDashboard/Spindexer Reverse": "Command",
       "/SmartDashboard/Visualizers/Hood": "Mechanism2d",
       "/SmartDashboard/Visualizers/Turret": "Mechanism2d"
-    },
-    "windows": {
-      "/SmartDashboard/Autonomous": {
-        "window": {
-          "visible": true
-        }
-      },
-      "/SmartDashboard/Field": {
-        "bottom": 1914,
-        "height": 8.069275856018066,
-        "left": 245,
-        "right": 3942,
-        "top": 118,
-        "width": 16.54119300842285,
-        "window": {
-          "visible": true
-        }
-      },
-      "/SmartDashboard/Scheduler": {
-        "window": {
-          "visible": true
-        }
-      }
-    }
-  },
-  "NetworkTables": {
-    "transitory": {
-      "SmartDashboard": {
-        "FieldPositions": {
-          "open": true
-        },
-        "Handoff": {
-          "open": true
-        },
-        "States": {
-          "open": true
-        },
-        "open": true
-      }
     }
   },
   "NetworkTables Info": {

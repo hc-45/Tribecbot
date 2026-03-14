@@ -323,7 +323,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 Seconds.of(kSimLoopPeriod),
                 Pounds.of(115),
                 Inches.of(30),
-                Inches.of(30),
+                Inches.of(38),
                 DCMotor.getKrakenX60(1),
                 DCMotor.getKrakenX44(1),
                 1.2, // wheel COF

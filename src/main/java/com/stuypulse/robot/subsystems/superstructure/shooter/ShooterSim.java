@@ -24,8 +24,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import java.util.Optional;
 
-import org.ironmaple.simulation.seasonspecific.rebuilt2026.Arena2026Rebuilt;
-
 public class ShooterSim extends Shooter {
     private LinearSystemSim<N1, N1, N1> sim;
     private final LinearSystemLoop<N1, N1, N1> controller;
