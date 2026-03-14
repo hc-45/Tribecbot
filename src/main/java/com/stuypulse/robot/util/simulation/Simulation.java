@@ -36,6 +36,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
@@ -44,6 +45,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Simulation {
@@ -77,6 +79,7 @@ public class Simulation {
 
     private final StructPublisher<Pose2d> drivetrain;
     private final StructArrayPublisher<SwerveModuleState> swerve;
+    private final StructPublisher<ChassisSpeeds> chassis;
     private final StructArrayPublisher<Pose3d> fuel;
     private final StructPublisher<Pose3d> intakePivot;
     private final StructPublisher<Pose3d> hopper;
@@ -97,11 +100,12 @@ public class Simulation {
         mapleSimIntake.addGamePiecesToIntake(SimulationConstants.Hopper.FUEL_CAPACITY);
 
         SHOOT_LOOP = new Notifier(this::updateShooting);
-        SHOOT_LOOP.startPeriodic(1.0 / SimulationConstants.Shooter.BPS);
+        SHOOT_LOOP.startPeriodic(1.0 / SimulationConstants.Shooter.BPS * 2); // multiply by 2 to account for the delaying in updateShooting
 
         NetworkTableInstance table = NetworkTableInstance.getDefault();
         drivetrain = table.getStructTopic("AdvScope/DTPose", Pose2d.struct).publish();
         swerve = table.getStructArrayTopic("AdvScope/SwerveStates", SwerveModuleState.struct).publish();
+        chassis = table.getStructTopic("AdvScope/ChassisSpeeds", ChassisSpeeds.struct).publish();
         fuel = table.getStructArrayTopic("AdvScope/FuelPoses", Pose3d.struct).publish();
         intakePivot = table.getStructTopic("AdvScope/IntakePose", Pose3d.struct).publish();
         hopper = table.getStructTopic("AdvScope/HopperPose", Pose3d.struct).publish();
@@ -159,6 +163,7 @@ public class Simulation {
      * Uses a game piece from the intake and launches at the hub if shot conditions are met.
      */
     private void updateShooting() {
+        Timer.delay(Math.abs(Arena2026Rebuilt.randomInRange(0.5)));
         if (!shotConditionsSatisfied())
             return;
         if (!mapleSimIntake.obtainGamePieceFromIntake())
@@ -166,10 +171,9 @@ public class Simulation {
 
         Pose2d turretPose = CommandSwerveDrivetrain.getInstance().getTurretPose();
         InterpolatedShotInfo shot = InterpolationCalculator.interpolateShotInfo(
-                turretPose, Field.getHubPose());
+            turretPose, Field.getHubPose());
 
-        // Hood angle is measured from vertical in CAD; convert to launch pitch above
-        // horizontal.
+        // hood angle works when its done like this for some reason 😂
         double launchPitchDeg = 90.0 - shot.targetHoodAngle().getDegrees();
 
         robotRelativeAddPieceWithVariance(
@@ -327,6 +331,7 @@ public class Simulation {
         swerve.set(Arrays.stream(mapleSimDrive.getModules())
             .map(SwerveModuleSimulation::getCurrentState)
             .toArray(SwerveModuleState[]::new));
+        chassis.set(mapleSimDrive.getDriveTrainSimulatedChassisSpeedsFieldRelative());
 
         fuel.set(ARENA.getGamePiecesArrayByType("Fuel"));
 

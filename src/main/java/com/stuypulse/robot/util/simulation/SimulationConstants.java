@@ -144,7 +144,7 @@ public interface SimulationConstants {
     }
 
     public interface Shooter {
-        double BPS = 7.0; // balls per second, TODO: get actual value
+        double BPS = 8.0; // balls per second, TODO: get actual value
         double COMPRESSION_FACTOR = 0.85; // how much the flywheel compresses the gamepiece and thus affects its exit speed
 
         public static double rpmToMps(double RPM) {

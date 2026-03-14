@@ -30,8 +30,6 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
@@ -343,7 +341,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 TunerConstants.FrontRight,
                 TunerConstants.BackLeft,
                 TunerConstants.BackRight);
-        resetPose(new Pose2d(0.5, 0.5, new Rotation2d())); // spawn inside field
         m_simNotifier = new Notifier(mapleSimSwerveDrivetrain::update);
         m_simNotifier.startPeriodic(kSimLoopPeriod);
     }
