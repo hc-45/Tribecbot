@@ -157,7 +157,7 @@ public interface SimulationConstants {
             0.3255608932,
             Degrees.of(90), // maybe 0?
             Degrees.of(0),
-            Degrees.of(-90.0) // CAD zero angle offset degrees
+            Degrees.of(90.0) // CAD zero angle offset degrees
         );
     }
 

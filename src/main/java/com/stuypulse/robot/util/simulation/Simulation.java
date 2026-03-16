@@ -100,7 +100,7 @@ public class Simulation {
         mapleSimIntake.addGamePiecesToIntake(SimulationConstants.Hopper.FUEL_CAPACITY);
 
         SHOOT_LOOP = new Notifier(this::updateShooting);
-        SHOOT_LOOP.startPeriodic(1.0 / SimulationConstants.Shooter.BPS * 2); // multiply by 2 to account for the delaying in updateShooting
+        SHOOT_LOOP.startPeriodic(1.0 / SimulationConstants.Shooter.BPS); // multiply by 2 to account for the delaying in updateShooting
 
         NetworkTableInstance table = NetworkTableInstance.getDefault();
         drivetrain = table.getStructTopic("AdvScope/DTPose", Pose2d.struct).publish();
