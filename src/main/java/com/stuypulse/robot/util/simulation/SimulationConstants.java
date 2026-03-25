@@ -6,17 +6,27 @@
 
 package com.stuypulse.robot.util.simulation;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.*;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.swerve.SwerveModuleConstants;
+import com.pathplanner.lib.config.PIDConstants;
+import com.stuypulse.robot.Robot;
+import com.stuypulse.robot.constants.Field;
 import com.stuypulse.robot.constants.Settings;
+import com.stuypulse.robot.subsystems.swerve.CommandSwerveDrivetrain;
+import com.stuypulse.robot.subsystems.swerve.TunerConstants;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Mass;
 
 public interface SimulationConstants {
     /**
@@ -146,6 +156,7 @@ public interface SimulationConstants {
     public interface Shooter {
         double BPS = 8.0; // balls per second, TODO: get actual value
         double COMPRESSION_FACTOR = 0.85; // how much the flywheel compresses the gamepiece and thus affects its exit speed
+        Distance TURRET_ELEVATION = Meters.of(0.6);
 
         public static double rpmToMps(double RPM) {
             return ((Settings.Superstructure.Shooter.FLYWHEEL_RADIUS * RPM * Math.PI) / 60.0) * COMPRESSION_FACTOR;
@@ -182,8 +193,41 @@ public interface SimulationConstants {
 
     public interface Hopper {
         int FUEL_CAPACITY = 67;
+        int PRELOADS = 8;
 
         public Offsets OFFSETS = new Offsets(-0.38, 0, 0, Degrees.of(90), Degrees.of(0), Degrees.of(90));
+    }
+
+    public interface Drivetrain {
+        PIDConstants XY = new PIDConstants(2.2, 0, 0.0); // alignment
+        PIDConstants THETA = new PIDConstants(3, 0, 0.0);
+
+        Distance LENGTH = Inches.of(30.0); // with bumpers on
+        Distance WIDTH = Inches.of(38.0);
+        double WHEEL_COF = 1.2; // big guess
+
+        @SuppressWarnings("unchecked")
+        public static final SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration>[] MODULE_CONSTANTS = new SwerveModuleConstants[] {
+                TunerConstants.FrontLeft,
+                TunerConstants.FrontRight,
+                TunerConstants.BackLeft,
+                TunerConstants.BackRight
+        };
+
+        public static final Translation2d[] MODULE_TRANSLATIONS = new Translation2d[] {
+                new Translation2d(MODULE_CONSTANTS[0].LocationX, MODULE_CONSTANTS[0].LocationY),
+                new Translation2d(MODULE_CONSTANTS[1].LocationX, MODULE_CONSTANTS[1].LocationY),
+                new Translation2d(MODULE_CONSTANTS[2].LocationX, MODULE_CONSTANTS[2].LocationY),
+                new Translation2d(MODULE_CONSTANTS[3].LocationX, MODULE_CONSTANTS[3].LocationY)
+        };
+
+        public static Pose2d getPose() {
+            return getPose(CommandSwerveDrivetrain.getInstance().getMapleSimDrive().getSimulatedDriveTrainPose());
+        }
+
+        public static Pose2d getPose(Pose2d pose) {
+            return Robot.isBlue() ? pose : Field.transformToOppositeAlliance(pose);
+        }
     }
 
     /****************/
@@ -200,4 +244,23 @@ public interface SimulationConstants {
     double HUB_TARGET_Z = 1.3; // height of the hub in meters
 
     double HUB_TOLERANCE_XY = 0.3; // tolerance for a shot to be counted as a score, in meters
+
+    Mass ROBOT_WEIGHT = Pounds.of(115.0);
+
+    
+	public static final Pose2d[] ROBOT_QUEENING_POSITIONS = new Pose2d[] {
+			new Pose2d(-6, 0, new Rotation2d()),
+			new Pose2d(-5, 0, new Rotation2d()),
+			new Pose2d(-4, 0, new Rotation2d()),
+			new Pose2d(-3, 0, new Rotation2d()),
+			new Pose2d(-2, 0, new Rotation2d())
+	};
+
+	public static final Pose2d[] ROBOTS_STARTING_POSITIONS = new Pose2d[] {
+			new Pose2d(12.5, 0.5, Rotation2d.fromDegrees(90)), // depot side trench facing hub
+			new Pose2d(12.5, 7.777, Rotation2d.fromDegrees(270)),
+			new Pose2d(15, 2, Rotation2d.fromDegrees(180)),
+			new Pose2d(1.6, 6, new Rotation2d()),
+			new Pose2d(1.6, 4, new Rotation2d())
+	};
 }

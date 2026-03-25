@@ -19,6 +19,7 @@ import com.stuypulse.robot.constants.Settings;
 import com.stuypulse.robot.subsystems.superstructure.turret.Turret;
 import com.stuypulse.robot.subsystems.swerve.TunerConstants.TunerSwerveDrivetrain;
 import com.stuypulse.robot.util.simulation.MapleSimSwerveDrivetrain;
+import com.stuypulse.robot.util.simulation.SimulationConstants;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -328,12 +329,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private void startSimThread() {
         mapleSimSwerveDrivetrain = new MapleSimSwerveDrivetrain(
                 Seconds.of(kSimLoopPeriod),
-                Pounds.of(115),
-                Inches.of(30),
-                Inches.of(38),
+                SimulationConstants.ROBOT_WEIGHT,
+                SimulationConstants.Drivetrain.LENGTH,
+                SimulationConstants.Drivetrain.WIDTH,
                 DCMotor.getKrakenX60(1),
                 DCMotor.getKrakenX44(1),
-                1.2, // wheel COF
+                SimulationConstants.Drivetrain.WHEEL_COF, // wheel COF
                 getModuleLocations(),
                 getPigeon2(),
                 getModules(),

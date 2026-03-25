@@ -78,6 +78,7 @@ public class Simulation {
     /********************************/
 
     private final StructPublisher<Pose2d> drivetrain;
+    private final StructArrayPublisher<Pose2d> otherRobots;
     private final StructArrayPublisher<SwerveModuleState> swerve;
     private final StructPublisher<ChassisSpeeds> chassis;
     private final StructArrayPublisher<Pose3d> fuel;
@@ -97,13 +98,14 @@ public class Simulation {
         this.configure(); // override instance before dependencies use it
 
         mapleSimIntake = createIntakeSimulation();
-        mapleSimIntake.addGamePiecesToIntake(SimulationConstants.Hopper.FUEL_CAPACITY);
+        mapleSimIntake.addGamePiecesToIntake(SimulationConstants.Hopper.PRELOADS);
 
         SHOOT_LOOP = new Notifier(this::updateShooting);
         SHOOT_LOOP.startPeriodic(1.0 / SimulationConstants.Shooter.BPS); // multiply by 2 to account for the delaying in updateShooting
 
         NetworkTableInstance table = NetworkTableInstance.getDefault();
         drivetrain = table.getStructTopic("AdvScope/DTPose", Pose2d.struct).publish();
+        otherRobots = table.getStructArrayTopic("AdvScope/OtherRobotPoses", Pose2d.struct).publish();
         swerve = table.getStructArrayTopic("AdvScope/SwerveStates", SwerveModuleState.struct).publish();
         chassis = table.getStructTopic("AdvScope/ChassisSpeeds", ChassisSpeeds.struct).publish();
         fuel = table.getStructArrayTopic("AdvScope/FuelPoses", Pose3d.struct).publish();
@@ -179,7 +181,7 @@ public class Simulation {
         robotRelativeAddPieceWithVariance(
             turretPose.getTranslation(),
             turretPose.getRotation(),
-            Meters.of(0.6),
+            SimulationConstants.Shooter.TURRET_ELEVATION,
             MetersPerSecond.of(SimulationConstants.Shooter.rpmToMps(shooterSim.getRPM())),
             Degrees.of(launchPitchDeg),
             SimulationConstants.LAUNCH_X_VARIANCE,
@@ -266,7 +268,7 @@ public class Simulation {
     private Pose3d getIntakePivotPose() {
         return SimulationConstants.Intake.PIVOT_OFFSETS.withRotation(new Rotation3d(
             0,
-            Math.toRadians(180)-intakeSim.getPivotAngle().getRadians(),
+            Math.toRadians(180) - intakeSim.getPivotAngle().getRadians(), // inverts the angle
             0
         ));
     }
@@ -321,6 +323,7 @@ public class Simulation {
     /**
      * <h2>Publishes and updates all data</h2>
      * <p>Updates every subsystem's NetworkTables entry and prompts an update of the {@link IntakeSimulation} instance
+     * <i>(is thread-safe)
      */
     public synchronized void update() {
         if (mapleSimDrive == null) return;
@@ -328,6 +331,7 @@ public class Simulation {
         updateIntakeSim();
 
         drivetrain.set(mapleSimDrive.getSimulatedDriveTrainPose());
+        otherRobots.set(OtherRobotInSimulation.getRobotPoses());
         swerve.set(Arrays.stream(mapleSimDrive.getModules())
             .map(SwerveModuleSimulation::getCurrentState)
             .toArray(SwerveModuleState[]::new));
